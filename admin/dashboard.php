@@ -9,17 +9,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $role = $_SESSION['role_type']; // Get user role
-
-// Fetch request statistics
-$stmt = $conn->prepare("SELECT 
-    SUM(requestStatus = 'pending') AS pending, 
-    SUM(requestStatus = 'approved') AS approved, 
-    SUM(requestStatus = 'rejected') AS rejected 
-    FROM RequestTable");
-$stmt->execute();
-$result = $stmt->get_result();
-$stats = $result->fetch_assoc();
-$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -28,54 +17,93 @@ $stmt->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <div class="dashboard-container">
-        <h2>Welcome, <?php echo htmlspecialchars($_SESSION['user_email']); ?></h2>
-        <p>Role: <?php echo htmlspecialchars($role); ?></p>
-        
-        <div id="dashboardStats">
-    <p>Total Requests: <span id="totalRequests">0</span></p>
-    <p>Pending Requests: <span id="pendingRequests">0</span></p>
-    <p>Approved Requests: <span id="approvedRequests">0</span></p>
-    <p>Rejected Requests: <span id="rejectedRequests">0</span></p>
-</div>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Dashboard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="manage_request.php">Manage Requests</a></li>
+                    <li class="nav-item"><a class="nav-link" href="manage_students.php">View Student Records</a></li>
+                    <?php if ($role === 'admin'): ?>
+                        <li class="nav-item"><a class="nav-link" href="manage_documents.php">Manage Documents</a></li>
+                        <li class="nav-item"><a class="nav-link" href="manage_users.php">Manage Admins</a></li>
+                    <?php endif; ?>
+                    <li class="nav-item"><a class="nav-link btn btn-danger text-white" href="logout.php">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    fetchDashboardStats(); // Load stats when page loads
-    setInterval(fetchDashboardStats, 5000); // Auto-update every 5 seconds
-});
+    <!-- Dashboard Content -->
+    <div class="container mt-4">
+        <h2 class="text-center">Welcome, <?php echo htmlspecialchars($_SESSION['user_email']); ?></h2>
+        <p class="text-center">Role: <strong><?php echo htmlspecialchars($role); ?></strong></p>
 
-function fetchDashboardStats() {
-    fetch('../api/dashboard_api.php') // Call API
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === "success") {
-                document.getElementById("totalRequests").innerText = data.total;
-                document.getElementById("pendingRequests").innerText = data.pending;
-                document.getElementById("approvedRequests").innerText = data.approved;
-                document.getElementById("rejectedRequests").innerText = data.rejected;
-            }
-        })
-        .catch(error => console.error("Error fetching dashboard stats:", error));
-}
-</script>
-
-        
-        <div class="nav-links">
-        <a href="manage_request.php">Manage Requests</a>
-<a href="manage_students.php">View Student Records</a>
-
-<?php if ($role === 'admin'): ?>
-    <a href="manage_documents.php">Manage Documents</a>
-    <a href="manage_users.php">Manage Admins</a>
-<?php endif; ?>
-
-<a href="logout.php">Logout</a>
-
+        <!-- Dashboard Stats -->
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Requests</h5>
+                        <p class="card-text fs-3" id="totalRequests">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Pending</h5>
+                        <p class="card-text fs-3" id="pendingRequests">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Approved</h5>
+                        <p class="card-text fs-3" id="approvedRequests">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Rejected</h5>
+                        <p class="card-text fs-3" id="rejectedRequests">0</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Fetch Dashboard Stats -->
+    <script>
+        function fetchDashboardStats() {
+            $.getJSON("../api/dashboard_api.php", function(data) {
+                if (data.status === "success") {
+                    $("#totalRequests").text(data.total);
+                    $("#pendingRequests").text(data.pending);
+                    $("#approvedRequests").text(data.approved);
+                    $("#rejectedRequests").text(data.rejected);
+                }
+            }).fail(function() {
+                console.error("Error fetching dashboard stats.");
+            });
+        }
+
+        $(document).ready(function() {
+            fetchDashboardStats();
+            setInterval(fetchDashboardStats, 5000); // Refresh every 5 seconds
+        });
+    </script>
 </body>
 </html>
