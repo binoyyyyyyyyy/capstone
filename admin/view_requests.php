@@ -48,22 +48,35 @@ if (!$request) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Request</title>
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h2>Request Details</h2>
-        <table border="1">
-            <tr><th>Request Code</th><td><?php echo htmlspecialchars($request['requestCode']); ?></td></tr>
-            <tr><th>Student Name</th><td><?php echo htmlspecialchars($request['firstname'] . ' ' . $request['lastname']); ?></td></tr>
-            <tr><th>Document Name</th><td><?php echo htmlspecialchars($request['documentName']); ?></td></tr>
-            <tr><th>Date Requested</th><td><?php echo htmlspecialchars($request['dateRequest']); ?></td></tr>
-            <tr><th>Pick-up Date</th><td><?php echo htmlspecialchars($request['datePickUp']); ?></td></tr>
-            <tr><th>Status</th><td><?php echo htmlspecialchars($request['requestStatus']); ?></td></tr>
-            <tr><th>Receiver Name</th><td><?php echo htmlspecialchars($request['nameOfReceiver']); ?></td></tr>
-            <tr><th>Remarks</th><td><?php echo htmlspecialchars($request['remarks']); ?></td></tr>
-        </table>
-        <a href="manage_request.php">Back to Manage Requests</a>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h4>Request Details</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <tr><th>Request Code</th><td><?php echo htmlspecialchars($request['requestCode']); ?></td></tr>
+                            <tr><th>Student Name</th><td><?php echo htmlspecialchars($request['firstname'] . ' ' . $request['lastname']); ?></td></tr>
+                            <tr><th>Document Name</th><td><?php echo htmlspecialchars($request['documentName']); ?></td></tr>
+                            <tr><th>Date Requested</th><td><?php echo htmlspecialchars($request['dateRequest']); ?></td></tr>
+                            <tr><th>Pick-up Date</th><td><?php echo htmlspecialchars($request['datePickUp']); ?></td></tr>
+                            <tr><th>Status</th><td><?php echo htmlspecialchars($request['requestStatus']); ?></td></tr>
+                            <tr><th>Receiver Name</th><td><?php echo htmlspecialchars($request['nameOfReceiver']); ?></td></tr>
+                            <tr><th>Remarks</th><td><?php echo htmlspecialchars($request['remarks']); ?></td></tr>
+                        </table>
+                        <div class="text-center">
+                            <a href="manage_request.php" class="btn btn-secondary">Back to Manage Requests</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

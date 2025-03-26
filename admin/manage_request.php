@@ -54,20 +54,22 @@ if (!isset($_SESSION['user_id'])) {
                     tableBody.empty();
 
                     data.data.forEach(request => {
-                        let row = `<tr>
-                            <td>${request.requestCode}</td>
-                            <td>${request.firstname} ${request.lastname}</td>
-                            <td>${request.documentName}</td>
-                            <td>${request.dateRequest}</td>
-                            <td><span class="badge bg-${getStatusClass(request.requestStatus)}">${request.requestStatus}</span></td>
-                            <td>
-                                <a href="update_request.php?id=${request.requestID}" class="btn btn-warning btn-sm">Update</a>
-                                <a href="view_requests.php?id=${request.requestID}" class="btn btn-info btn-sm">View</a>
-                                <button class="btn btn-danger btn-sm" onclick="deleteRequest(${request.requestID})">Delete</button>
-                            </td>
-                        </tr>`;
-                        tableBody.append(row);
-                    });
+    let formattedDate = new Date(request.dateRequest).toLocaleString(); // Formats properly
+    let row = `<tr>
+        <td>${request.requestCode}</td>
+        <td>${request.firstname} ${request.lastname}</td>
+        <td>${request.documentName}</td>
+        <td>${formattedDate}</td>  <!-- Display correctly formatted date -->
+        <td><span class="badge bg-${getStatusClass(request.requestStatus)}">${request.requestStatus}</span></td>
+        <td>
+            <a href="update_request.php?id=${request.requestID}" class="btn btn-warning btn-sm">Update</a>
+            <a href="view_requests.php?id=${request.requestID}" class="btn btn-info btn-sm">View</a>
+            <button class="btn btn-danger btn-sm" onclick="deleteRequest(${request.requestID})">Delete</button>
+        </td>
+    </tr>`;
+    tableBody.append(row);
+});
+
                 }
             }).fail(function() {
                 console.error("Error fetching requests.");

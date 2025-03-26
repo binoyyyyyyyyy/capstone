@@ -6,12 +6,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET': // Fetch requests with student & document info
-        $stmt = $conn->prepare("SELECT r.requestID, r.requestCode, r.dateRequest, r.requestStatus, 
-            s.firstname, s.lastname, d.documentName 
-            FROM RequestTable r 
-            JOIN studentInformation s ON r.studentID = s.studentID 
-            JOIN DocumentsType d ON r.documentID = d.documentID 
-            ORDER BY r.dateRequest DESC");
+        $stmt = $conn->prepare("SELECT r.requestID, r.requestCode, 
+    DATE_FORMAT(r.dateRequest, '%Y-%m-%d %H:%i:%s') AS dateRequest, 
+    r.requestStatus, s.firstname, s.lastname, d.documentName 
+    FROM RequestTable r 
+    JOIN StudentInformation s ON r.studentID = s.studentID 
+    JOIN DocumentsType d ON r.documentID = d.documentID 
+    ORDER BY r.dateRequest DESC");
+
+
         
         $stmt->execute();
         $result = $stmt->get_result();
@@ -19,7 +22,6 @@ switch ($method) {
         
         echo json_encode(["status" => "success", "data" => $requests]);
         break;
-    
 
     case 'POST': // Create a new request
         $data = json_decode(file_get_contents("php://input"), true);
@@ -28,7 +30,8 @@ switch ($method) {
             exit();
         }
 
-        $stmt = $conn->prepare("INSERT INTO RequestTable (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, dateCreated) VALUES (?, ?, ?, ?, NOW(), ?, 'pending', NOW())");
+        $stmt = $conn->prepare("INSERT INTO RequestTable (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, dateCreated) 
+                                VALUES (?, ?, ?, ?, NOW(), ?, 'pending', NOW())");
         $requestCode = uniqid("REQ-");
         $stmt->bind_param("siisi", $requestCode, $data['documentID'], $data['userID'], $data['studentID'], $data['datePickUp']);
 
@@ -60,3 +63,4 @@ switch ($method) {
         echo json_encode(["status" => "error", "message" => "Invalid request method"]);
         break;
 }
+?>

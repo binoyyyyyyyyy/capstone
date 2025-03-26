@@ -50,39 +50,60 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit User</title>
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-    <a href="dashboard.php">Back to Dashboard</a>
-        <h2>Edit User</h2>
-        <form action="" method="POST">
-            <label>First Name:</label>
-            <input type="text" name="firstName" value="<?php echo htmlspecialchars($user['firstName']); ?>" required>
-            
-            <label>Last Name:</label>
-            <input type="text" name="lastName" value="<?php echo htmlspecialchars($user['lastName']); ?>" required>
-            
-            <label>Email:</label>
-            <input type="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-            
-            <label>Role:</label>
-            <select name="role_type" required>
-                <option value="admin" <?php echo ($user['role_type'] == 'admin') ? 'selected' : ''; ?>>Admin</option>
-                <option value="staff" <?php echo ($user['role_type'] == 'staff') ? 'selected' : ''; ?>>Staff</option>
-            </select>
-            
-            <p><strong>Edited By:</strong> <?php echo htmlspecialchars($loggedInUser); ?></p>
+    <div class="container mt-5">
+        <h2 class="mb-4">Edit User</h2>
 
-            <button type="submit">Update User</button>
-        </form>
+        <!-- Alert Messages -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+        <?php elseif (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+        <?php endif; ?>
+
+        <div class="card shadow p-4">
+            <form action="" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">First Name:</label>
+                    <input type="text" name="firstName" class="form-control" value="<?php echo htmlspecialchars($user['firstName']); ?>" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Last Name:</label>
+                    <input type="text" name="lastName" class="form-control" value="<?php echo htmlspecialchars($user['lastName']); ?>" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email:</label>
+                    <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Role:</label>
+                    <select name="role_type" class="form-select" required>
+                        <option value="admin" <?php echo ($user['role_type'] == 'admin') ? 'selected' : ''; ?>>Admin</option>
+                        <option value="staff" <?php echo ($user['role_type'] == 'staff') ? 'selected' : ''; ?>>Staff</option>
+                    </select>
+                </div>
+
+                <p><strong>Edited By:</strong> <?php echo htmlspecialchars($loggedInUser); ?></p>
+
+                <div class="d-flex justify-content-between">
+                    <a href="dashboard.php" class="btn btn-secondary">⬅ Back to Dashboard</a>
+                    <button type="submit" class="btn btn-primary">💾 Update User</button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

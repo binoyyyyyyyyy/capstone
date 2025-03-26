@@ -2,31 +2,36 @@
 session_start();
 require_once '../config/config.php';
 
-// Check if admin is logged in
-if (!isset($_SESSION['admin_id'])) {
+if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
 
-// Check if student ID is provided
-if (!isset($_GET['id'])) {
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    $_SESSION['error'] = "Invalid student ID.";
     header("Location: manage_students.php");
     exit();
 }
 
-$studentID = $_GET['id'];
+$studentID = intval($_GET['id']);
 
-// Delete student record
-$stmt = $conn->prepare("DELETE FROM studentInformation WHERE studentID = ?");
-$stmt->bind_param("i", $studentID);
+// Delete related requests first
+$deleteRequests = $conn->prepare("DELETE FROM RequestTable WHERE studentID = ?");
+$deleteRequests->bind_param("i", $studentID);
+$deleteRequests->execute();
+$deleteRequests->close();
 
-if ($stmt->execute()) {
+// Now delete the student
+$deleteStudent = $conn->prepare("DELETE FROM StudentInformation WHERE studentID = ?");
+$deleteStudent->bind_param("i", $studentID);
+
+if ($deleteStudent->execute()) {
     $_SESSION['message'] = "Student deleted successfully!";
 } else {
     $_SESSION['error'] = "Failed to delete student.";
 }
 
-$stmt->close();
+$deleteStudent->close();
 header("Location: manage_students.php");
 exit();
 ?>

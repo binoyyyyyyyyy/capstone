@@ -20,41 +20,49 @@ $result = $stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Documents</title>
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body>
-    <div class="dashboard-container">
-        <h2>Manage Documents</h2>
-        <a href="dashboard.php">Back to Dashboard</a>
-        <table>
-            <thead>
-                <tr>
-                    <th>Document ID</th>
-                    <th>Document Code</th>
-                    <th>Document Name</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = $result->fetch_assoc()): ?>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="card shadow-lg p-4">
+            <h2 class="text-center">Manage Documents</h2>
+            <div class="text-end mb-3">
+                <a href="add_document.php" class="btn btn-success">Add New Document</a>
+                <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
                     <tr>
-                        <td><?php echo htmlspecialchars($row['documentID']); ?></td>
-                        <td><?php echo htmlspecialchars($row['documentCode']); ?></td>
-                        <td><?php echo htmlspecialchars($row['documentName']); ?></td>
-                        <td><?php echo htmlspecialchars($row['documentDesc']); ?></td>
-                        <td><?php echo htmlspecialchars($row['documentStatus']); ?></td>
-                        <td>
-                            <a href="edit_document.php?id=<?php echo $row['documentID']; ?>">Edit</a>
-                            <a href="delete_document.php?id=<?php echo $row['documentID']; ?>" onclick="return confirm('Are you sure?');">Delete</a>
-                        </td>
+                        <th>Document ID</th>
+                        <th>Document Code</th>
+                        <th>Document Name</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
-        <a href="add_document.php">Add New Document</a>
+                </thead>
+                <tbody>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($row['documentID']); ?></td>
+                            <td><?php echo htmlspecialchars($row['documentCode']); ?></td>
+                            <td><?php echo htmlspecialchars($row['documentName']); ?></td>
+                            <td><?php echo htmlspecialchars($row['documentDesc']); ?></td>
+                            <td><span class="badge bg-<?php echo ($row['documentStatus'] == 'available') ? 'success' : 'danger'; ?>">
+                                <?php echo htmlspecialchars($row['documentStatus']); ?></span>
+                            </td>
+                            <td>
+                                <a href="edit_document.php?id=<?php echo $row['documentID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                                <a href="delete_document.php?id=<?php echo $row['documentID']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?');">Delete</a>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 

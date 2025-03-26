@@ -60,59 +60,88 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     exit();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Student</title>
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-    <a href="dashboard.php">Back to Dashboard</a>
-        <h2>Edit Student</h2>
-        <form action="" method="POST">
-            <label>Student No:</label>
-            <input type="text" name="studentNo" value="<?php echo htmlspecialchars($student['studentNo']); ?>" required>
-            
-            <label>First Name:</label>
-            <input type="text" name="firstname" value="<?php echo htmlspecialchars($student['firstName']); ?>" required>
-            
-            <label>Last Name:</label>
-            <input type="text" name="lastname" value="<?php echo htmlspecialchars($student['lastName']); ?>" required>
-            
-            <label>Middle Name:</label>
-            <input type="text" name="middlename" value="<?php echo htmlspecialchars($student['middleName']); ?>">
-            
-            <label>Birth Date:</label>
-            <input type="date" name="birthDate" value="<?php echo htmlspecialchars($student['birthDate']); ?>" required>
-            
-            <label>Course:</label>
-            <select name="course_ID" required>
-                <option value="">Select Course</option>
-                <?php while ($course = $courses->fetch_assoc()): ?>
-                    <option value="<?php echo $course['courseID']; ?>" <?php echo ($student['course_ID'] == $course['courseID']) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($course['courseName']); ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
-            
-            <label>Major:</label>
-            <select name="majorID" required>
-                <option value="">Select Major</option>
-                <?php while ($major = $majors->fetch_assoc()): ?>
-                    <option value="<?php echo $major['majorID']; ?>" <?php echo ($student['majorID'] == $major['majorID']) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($major['majorName']); ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
-            
-            <label>Contact No:</label>
-            <input type="text" name="contactNo" value="<?php echo htmlspecialchars($student['contactNo']); ?>" required>
-            
-            <button type="submit">Update Student</button>
+    <div class="container mt-5">
+        <h2 class="mb-4">Edit Student</h2>
+
+        <!-- Display Messages -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+        <?php endif; ?>
+
+        <a href="dashboard.php" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+        <form action="" method="POST" class="border p-4 rounded shadow-sm bg-light">
+            <div class="mb-3">
+                <label class="form-label">Student No:</label>
+                <input type="text" class="form-control" name="studentNo" value="<?php echo htmlspecialchars($student['studentNo']); ?>" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">First Name:</label>
+                <input type="text" class="form-control" name="firstname" value="<?php echo htmlspecialchars($student['firstName']); ?>" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Last Name:</label>
+                <input type="text" class="form-control" name="lastname" value="<?php echo htmlspecialchars($student['lastName']); ?>" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Middle Name:</label>
+                <input type="text" class="form-control" name="middlename" value="<?php echo htmlspecialchars($student['middleName']); ?>">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Birth Date:</label>
+                <input type="date" class="form-control" name="birthDate" value="<?php echo htmlspecialchars($student['birthDate']); ?>" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Course:</label>
+                <select class="form-select" name="course_ID" required>
+                    <option value="">Select Course</option>
+                    <?php while ($course = $courses->fetch_assoc()): ?>
+                        <option value="<?php echo $course['courseID']; ?>" <?php echo ($student['course_ID'] == $course['courseID']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($course['courseName']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Major:</label>
+                <select class="form-select" name="majorID" required>
+                    <option value="">Select Major</option>
+                    <?php while ($major = $majors->fetch_assoc()): ?>
+                        <option value="<?php echo $major['majorID']; ?>" <?php echo ($student['majorID'] == $major['majorID']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($major['majorName']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Contact No:</label>
+                <input type="text" class="form-control" name="contactNo" value="<?php echo htmlspecialchars($student['contactNo']); ?>" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Update Student</button>
         </form>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

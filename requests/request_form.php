@@ -9,13 +9,13 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Fetch available documents
-$documentQuery = $conn->query("SELECT documentID, documentName FROM DocumentsType");
+$documentQuery = $conn->query("SELECT documentID, documentName FROM DocumentsType WHERE dateDeleted IS NULL");
 $documents = $documentQuery->fetch_all(MYSQLI_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requestCode = uniqid('REQ-');
-    $documentID = $_POST['documentID']; // Now using selected document
-    $studentID = $_POST['studentID'];
+    $documentID = $_POST['documentID'];
+    $studentNo = $_POST['studentNo'];
     $dateRequest = date('Y-m-d');
     $datePickUp = $_POST['datePickUp'];
     $requestStatus = 'pending';
@@ -23,33 +23,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remarks = $_POST['remarks'];
     $userID = $_SESSION['user_id'];
 
+    // Validate if student exists and retrieve studentID
+    $studentCheck = $conn->prepare("SELECT studentID FROM StudentInformation WHERE studentNo = ? AND dateDeleted IS NULL");
+    $studentCheck->bind_param("s", $studentNo);
+    $studentCheck->execute();
+    $studentCheck->store_result();
+
+    if ($studentCheck->num_rows == 0) {
+        $_SESSION['error'] = "Student number does not exist or has been deleted.";
+        header("Location: request_form.php");
+        exit();
+    }
+
+    $studentCheck->bind_result($studentID);
+    $studentCheck->fetch();
+    $studentCheck->close();
+
     // Handle file upload
     $authorizationImage = NULL;
     if (!empty($_FILES['authorizationImage']['name'])) {
         $targetDir = "../uploads/";
-        $fileName = basename($_FILES['authorizationImage']['name']);
+        $fileName = time() . "_" . basename($_FILES['authorizationImage']['name']);
         $targetFilePath = $targetDir . $fileName;
-        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+        $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
         
         // Allowed file types
         $allowedTypes = array('jpg', 'jpeg', 'png', 'pdf');
         if (in_array($fileType, $allowedTypes)) {
             if (move_uploaded_file($_FILES['authorizationImage']['tmp_name'], $targetFilePath)) {
                 $authorizationImage = $fileName;
+            } else {
+                $_SESSION['error'] = "File upload failed.";
+                header("Location: request_form.php");
+                exit();
             }
+        } else {
+            $_SESSION['error'] = "Invalid file type. Only JPG, JPEG, PNG, and PDF are allowed.";
+            header("Location: request_form.php");
+            exit();
         }
     }
 
     // Insert request into database
-    $stmt = $conn->prepare("INSERT INTO RequestTable (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, remarks, dateCreated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO RequestTable 
+        (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, remarks, dateCreated) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
     $stmt->bind_param("siiissssss", $requestCode, $documentID, $userID, $studentID, $dateRequest, $datePickUp, $requestStatus, $authorizationImage, $nameOfReceiver, $remarks);
 
     if ($stmt->execute()) {
-        $successMsg = "Request submitted successfully!";
+        $_SESSION['success'] = "Request submitted successfully!";
     } else {
-        $errorMsg = "Error submitting request.";
+        $_SESSION['error'] = "Error submitting request.";
     }
     $stmt->close();
+    header("Location: request_form.php");
+    exit();
 }
 ?>
 
@@ -64,8 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="form-container">
         <h2>Submit a Request</h2>
-        <?php if (isset($successMsg)) echo "<p class='success'>$successMsg</p>"; ?>
-        <?php if (isset($errorMsg)) echo "<p class='error'>$errorMsg</p>"; ?>
+        <?php if (isset($_SESSION['success'])): ?>
+            <p class="success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></p>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['error'])): ?>
+            <p class="error"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></p>
+        <?php endif; ?>
         <form method="POST" enctype="multipart/form-data">
             <label>Document:</label>
             <select name="documentID" required>
@@ -77,8 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
             </select>
             
-            <label>Student ID:</label>
-            <input type="number" name="studentID" required>
+            <label>Student Number:</label>
+            <input type="text" name="studentNo" required>
             
             <label>Pick-up Date:</label>
             <input type="date" name="datePickUp" required>
