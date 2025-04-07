@@ -22,7 +22,16 @@ if (!isset($_SESSION['user_id'])) {
 <body>
     <div class="container mt-4">
         <h2 class="text-center">Manage Requests</h2>
+
+        <!-- Display success/error messages -->
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-success"><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+        <?php elseif (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+        <?php endif; ?>
+
         <a href="dashboard.php" class="btn btn-primary mb-3">Back to Dashboard</a>
+        <a href="request_form.php" class="btn btn-primary mb-3">make a request</a>
 
         <table class="table table-bordered table-hover">
             <thead class="table-dark">
@@ -54,22 +63,21 @@ if (!isset($_SESSION['user_id'])) {
                     tableBody.empty();
 
                     data.data.forEach(request => {
-    let formattedDate = new Date(request.dateRequest).toLocaleString(); // Formats properly
-    let row = `<tr>
-        <td>${request.requestCode}</td>
-        <td>${request.firstname} ${request.lastname}</td>
-        <td>${request.documentName}</td>
-        <td>${formattedDate}</td>  <!-- Display correctly formatted date -->
-        <td><span class="badge bg-${getStatusClass(request.requestStatus)}">${request.requestStatus}</span></td>
-        <td>
-            <a href="update_request.php?id=${request.requestID}" class="btn btn-warning btn-sm">Update</a>
-            <a href="view_requests.php?id=${request.requestID}" class="btn btn-info btn-sm">View</a>
-            <button class="btn btn-danger btn-sm" onclick="deleteRequest(${request.requestID})">Delete</button>
-        </td>
-    </tr>`;
-    tableBody.append(row);
-});
-
+                        let formattedDate = new Date(request.dateRequest).toLocaleString();
+                        let row = `<tr>
+                            <td>${request.requestCode}</td>
+                            <td>${request.firstname} ${request.lastname}</td>
+                            <td>${request.documentName}</td>
+                            <td>${formattedDate}</td>
+                            <td><span class="badge bg-${getStatusClass(request.requestStatus)}">${request.requestStatus}</span></td>
+                            <td>
+                                <a href="update_request.php?id=${request.requestID}" class="btn btn-warning btn-sm">Update</a>
+                                <a href="view_requests.php?id=${request.requestID}" class="btn btn-info btn-sm">View</a>
+                                <a href="../backend/delete_request.php?id=${request.requestID}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?');">Delete</a>
+                            </td>
+                        </tr>`;
+                        tableBody.append(row);
+                    });
                 }
             }).fail(function() {
                 console.error("Error fetching requests.");
@@ -78,24 +86,6 @@ if (!isset($_SESSION['user_id'])) {
 
         function getStatusClass(status) {
             return status === "pending" ? "warning" : (status === "approved" ? "success" : "danger");
-        }
-
-        function deleteRequest(requestID) {
-            if (!confirm("Are you sure you want to delete this request?")) return;
-
-            $.ajax({
-                url: '../api/request_api.php',
-                method: "DELETE",
-                contentType: "application/json",
-                data: JSON.stringify({ requestID }),
-                success: function(response) {
-                    alert(response.message);
-                    fetchRequests();
-                },
-                error: function() {
-                    console.error("Error deleting request.");
-                }
-            });
         }
     </script>
 </body>

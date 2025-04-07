@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 // Check if request ID is provided
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     $_SESSION['error'] = "Invalid request ID!";
-    header("Location: manage_request.php");
+    header("Location: ../admin/manage_requests.php");
     exit();
 }
 
@@ -30,6 +30,6 @@ if ($stmt->execute()) {
 $stmt->close();
 $conn->close();
 
-// Redirect back to manage requests
-header("Location: manage_request.php");
+// Debug before redirection
+header("Location: /capstone/admin/manage_request.php");
 exit();

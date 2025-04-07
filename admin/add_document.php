@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require_once '../config/config.php'; // Database connection
@@ -7,46 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_type'] !== 'admin') {
     header("Location: ../login.php");
     exit();
 }
-
-$error = ""; // Initialize error message
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $documentCode = trim($_POST['documentCode']);
-    $documentName = trim($_POST['documentName']);
-    $documentDesc = trim($_POST['documentDesc']);
-    $documentStatus = trim($_POST['documentStatus']);
-
-    // Validate input
-    if (!empty($documentCode) && !empty($documentName) && !empty($documentDesc) && !empty($documentStatus)) {
-        // Check if document code already exists
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM DocumentsType WHERE documentCode = ?");
-        $stmt->bind_param("s", $documentCode);
-        $stmt->execute();
-        $stmt->bind_result($count);
-        $stmt->fetch();
-        $stmt->close();
-        
-        if ($count > 0) {
-            $error = "Document code already exists!";
-        } else {
-            // Insert new document
-            $stmt = $conn->prepare("INSERT INTO DocumentsType (documentCode, documentName, documentDesc, documentStatus) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $documentCode, $documentName, $documentDesc, $documentStatus);
-
-            if ($stmt->execute()) {
-                header("Location: manage_documents.php");
-                exit();
-            } else {
-                $error = "Failed to add document.";
-            }
-            $stmt->close();
-        }
-    } else {
-        $error = "All fields are required!";
-    }
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,8 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container mt-5">
         <div class="card shadow-lg p-4">
             <h2 class="text-center">Add New Document</h2>
-            <?php if (!empty($error)) echo "<div class='alert alert-danger'>$error</div>"; ?>
-            <form method="POST">
+            <?php if (!empty($_GET['error'])) echo "<div class='alert alert-danger'>{$_GET['error']}</div>"; ?>
+            <form method="POST" action="../backend/add_document.php">
                 <div class="mb-3">
                     <label class="form-label">Document Code</label>
                     <input type="text" name="documentCode" class="form-control" placeholder="Enter Document Code" required>
@@ -68,6 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-3">
                     <label class="form-label">Document Name</label>
                     <input type="text" name="documentName" class="form-control" placeholder="Enter Document Name" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Processing Time:</label>
+                    <select name="processingTime" class="form-select" required>
+                        <option value="1 day">1 Day</option>
+                        <option value="2 days">2 Days</option>
+                        <option value="3 days">3 Days</option>
+                        <option value="1 week">1 Week</option>
+                        <option value="2 weeks">2 Weeks</option>
+                        <option value="1 month">1 Month</option>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Description</label>
@@ -88,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -7,7 +7,10 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit();
 }
-
+$addedBy = isset($_SESSION['first_name']) && isset($_SESSION['last_name'])  
+    ? $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] 
+    : 'Unknown';
+    
 // Fetch all students with course and major names
 $sql = "SELECT s.*, c.courseName, m.majorName FROM studentInformation s 
         JOIN coursetable c ON s.course_ID = c.courseID 
@@ -57,9 +60,12 @@ $result = $conn->query($sql);
                         <td><?php echo isset($row['added_by']) ? htmlspecialchars($row['added_by']) : 'N/A'; ?></td>
                         <td><?php echo isset($row['edited_by']) ? htmlspecialchars($row['edited_by']) : 'N/A'; ?></td>
                         <td>
-                            <a href="edit_student.php?id=<?php echo $row['studentID']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                            <a href="delete_student.php?id=<?php echo $row['studentID']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
-                        </td>
+    <a href="edit_student.php?id=<?php echo $row['studentID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+    <a href="../backend/delete_student.php?id=<?php echo $row['studentID']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
+</td>
+
+
+
                     </tr>
                     <?php endwhile; ?>
                 </tbody>

@@ -54,9 +54,10 @@ $stmt->close();
                         <td><?php echo htmlspecialchars($row['added_by'] ?? 'Unknown'); ?></td>
                         <td><?php echo htmlspecialchars($row['edited_by'] ?? 'Not Edited'); ?></td>
                         <td>
-                            <a href="edit_user.php?id=<?php echo $row['userID']; ?>" class="btn btn-sm btn-warning">✏ Edit</a>
-                            <a href="delete_user.php?id=<?php echo $row['userID']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">🗑 Delete</a>
-                        </td>
+    <a href="edit_user.php?id=<?php echo $row['userID']; ?>" class="btn btn-sm btn-warning">✏ Edit</a>
+    <a href="../backend/delete_user.php?id=<?php echo $row['userID']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?');">🗑 Delete</a>
+</td>
+
                     </tr>
                     <?php endwhile; ?>
                 </tbody>

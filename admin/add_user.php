@@ -13,31 +13,6 @@ $loggedInUser = isset($_SESSION['first_name'], $_SESSION['last_name'])
     ? $_SESSION['first_name'] . ' ' . $_SESSION['last_name']
     : 'Unknown User';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $firstName = trim($_POST['firstName']);
-    $lastName = trim($_POST['lastName']);
-    $email = trim($_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
-    $role_type = $_POST['role_type'];
-
-    if (!in_array($role_type, ['admin', 'staff'])) {
-        die("Invalid role type");
-    }
-
-    // Insert new user with "Added By" field
-    $stmt = $conn->prepare("INSERT INTO UserTable (firstName, lastName, email, password, role_type, added_by) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssss", $firstName, $lastName, $email, $password, $role_type, $loggedInUser);
-
-    if ($stmt->execute()) {
-        $_SESSION['message'] = "User added successfully!";
-    } else {
-        $_SESSION['error'] = "Failed to add user.";
-    }
-
-    $stmt->close();
-    header("Location: manage_users.php");
-    exit();
-}
 ?>
 
 <!DOCTYPE html>
@@ -60,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php endif; ?>
 
         <div class="card shadow p-4">
-            <form action="" method="POST">
+            <form action="../backend/add_user.php" method="POST">
                 <div class="mb-3">
                     <label class="form-label">First Name:</label>
                     <input type="text" name="firstName" class="form-control" required>

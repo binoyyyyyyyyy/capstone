@@ -12,33 +12,8 @@ if (!isset($_SESSION['user_id'])) {
 $courses = $conn->query("SELECT courseID, courseName FROM coursetable ORDER BY courseName ASC");
 $majors = $conn->query("SELECT majorID, majorName FROM majortable ORDER BY majorName ASC");
 
-// Handle adding a new student
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $studentNo = trim($_POST['studentNo']);
-    $firstname = trim($_POST['firstname']);
-    $lastname = trim($_POST['lastname']);
-    $middlename = trim($_POST['middlename']);
-    $birthDate = $_POST['birthDate'];
-    $course_ID = $_POST['course_ID'];
-    $majorID = $_POST['majorID'];
-    $contactNo = trim($_POST['contactNo']);
-    $addedBy = $_SESSION['user_id'];
-
-    // Insert into database
-    $stmt = $conn->prepare("INSERT INTO studentInformation (studentNo, firstname, lastname, middlename, birthDate, course_ID, majorID, contactNo, added_By, dateCreated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-    $stmt->bind_param("sssssiisi", $studentNo, $firstname, $lastname, $middlename, $birthDate, $course_ID, $majorID, $contactNo, $addedBy);
-    
-    if ($stmt->execute()) {
-        $_SESSION['message'] = "Student added successfully!";
-    } else {
-        $_SESSION['error'] = "Failed to add student.";
-    }
-    
-    $stmt->close();
-    header("Location: manage_students.php");
-    exit();
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,7 +27,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <a href="dashboard.php" class="btn btn-secondary mb-3">Back to Dashboard</a>
         <h2 class="text-center">Add Student</h2>
         <div class="card p-4">
-            <form action="" method="POST">
+            <?php 
+            if (isset($_SESSION['message'])) {
+                echo "<div class='alert alert-success'>" . $_SESSION['message'] . "</div>";
+                unset($_SESSION['message']);
+            }
+            if (isset($_SESSION['error'])) {
+                echo "<div class='alert alert-danger'>" . $_SESSION['error'] . "</div>";
+                unset($_SESSION['error']);
+            }
+            ?>
+            <form action="../backend/add_student.php" method="POST">
                 <div class="mb-3">
                     <label class="form-label">Student No:</label>
                     <input type="text" name="studentNo" class="form-control" required>
