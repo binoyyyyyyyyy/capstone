@@ -23,27 +23,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $course_ID = $_POST['course_ID'];
     $majorID = $_POST['majorID'];
     $contactNo = trim($_POST['contactNo']);
-    $addedBy = $_SESSION['user_id'];
+    $studentStatus = $_POST['studentStatus'];
+    $year = $_POST['yearLevel'];
+    $addedBy = $loggedInUser;
 
     // Validate required fields
-    if (empty($studentNo) || empty($firstname) || empty($lastname) || empty($birthDate) || empty($course_ID) || empty($majorID) || empty($contactNo)) {
+    if (empty($studentNo) || empty($firstname) || empty($lastname) || empty($birthDate) || 
+        empty($course_ID) || empty($majorID) || empty($contactNo) || 
+        empty($studentStatus) || empty($year)) {
         $_SESSION['error'] = "All fields are required!";
         header("Location: ../admin/add_student.php");
         exit();
     }
 
-    // Insert into database (store the full name in added_By)
-    $stmt = $conn->prepare("INSERT INTO studentInformation (studentNo, firstname, lastname, middlename, birthDate, course_ID, majorID, contactNo, added_By, dateCreated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-    $stmt->bind_param("sssssiiss", $studentNo, $firstname, $lastname, $middlename, $birthDate, $course_ID, $majorID, $contactNo, $loggedInUser);
+    // Check if student number already exists
+    $checkStmt = $conn->prepare("SELECT studentID FROM studentInformation WHERE studentNo = ?");
+    $checkStmt->bind_param("s", $studentNo);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
     
+    if ($checkResult->num_rows > 0) {
+        $_SESSION['error'] = "Student number already exists!";
+        header("Location: ../admin/add_student.php");
+        exit();
+    }
+    $checkStmt->close();
+
+    // Insert into database
+    $stmt = $conn->prepare("INSERT INTO studentInformation 
+        (studentNo, firstname, lastname, middlename, birthDate, course_ID, majorID, 
+         contactNo, studentStatus, yearLevel, added_By, dateCreated) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    
+    $stmt->bind_param("sssssiissss", $studentNo, $firstname, $lastname, $middlename, 
+        $birthDate, $course_ID, $majorID, $contactNo, $studentStatus, $year, $addedBy);
+
     if ($stmt->execute()) {
         $_SESSION['message'] = "Student added successfully!";
+        header("Location: ../admin/manage_students.php");
     } else {
-        $_SESSION['error'] = "Failed to add student.";
+        $_SESSION['error'] = "Failed to add student: " . $conn->error;
+        header("Location: ../admin/add_student.php");
     }
     
     $stmt->close();
-    header("Location: ../admin/add_student.php");
     exit();
 }
 ?>

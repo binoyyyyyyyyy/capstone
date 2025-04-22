@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['error'] = "All fields are required!";
     }
 
-    header("Location: ../admin/edit_document.php?id=$documentID");
+    header("Location: ../admin/manage_documents.php?id=$documentID");
     exit();
 }
 $conn->close();

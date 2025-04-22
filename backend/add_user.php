@@ -20,10 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $role_type = $_POST['role_type'];
+    $userStatus = $_POST['userStatus'];
     $addedBy = $_SESSION['user_id'];
 
     // Validate required fields
-    if (empty($firstName) || empty($lastName) || empty($email) || empty($password) || empty($role_type)) {
+    if (empty($firstName) || empty($lastName) || empty($email) || empty($password) || empty($role_type) || empty($userStatus)) {
         $_SESSION['error'] = "All fields are required!";
         header("Location: ../admin/add_user.php");
         exit();
@@ -40,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
     // Insert new user with "Added By" field
-    $stmt = $conn->prepare("INSERT INTO UserTable (firstName, lastName, email, password, role_type, added_by) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssss", $firstName, $lastName, $email, $hashedPassword, $role_type, $loggedInUser);
+    $stmt = $conn->prepare("INSERT INTO UserTable (firstName, lastName, email, password, role_type, userStatus, added_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssss", $firstName, $lastName, $email, $hashedPassword, $role_type, $userStatus, $loggedInUser);
 
     if ($stmt->execute()) {
         $_SESSION['message'] = "User added successfully!";
@@ -50,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     $stmt->close();
-    header("Location: ../admin/add_user.php");
+    header("Location: ../admin/manage_users.php");
     exit();
 }
 ?>

@@ -1,44 +1,88 @@
 <?php
 session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+header('Content-Type: application/json');
+
 require_once '../config/config.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit();
+$response = ['success' => false];
+
+try {
+    if (!isset($_SESSION['user_id'])) {
+        throw new Exception("User is not logged in.");
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['studentID'], $_POST['password'])) {
+        throw new Exception("Invalid deletion request.");
+    }
+
+    $studentID = intval($_POST['studentID']);
+    $password = $_POST['password'];
+    $userID = $_SESSION['user_id'];
+
+    // Verify user's password
+    $stmt = $conn->prepare("SELECT password FROM userTable WHERE userID = ?");
+    if (!$stmt) {
+        throw new Exception("Database error: " . $conn->error);
+    }
+    
+    $stmt->bind_param("i", $userID);
+    if (!$stmt->execute()) {
+        throw new Exception("Database error: " . $stmt->error);
+    }
+    
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        if (password_verify($password, $row['password'])) {
+            // Begin transaction
+            $conn->begin_transaction();
+            
+            try {
+                // Delete related requests
+                $deleteRequests = $conn->prepare("DELETE FROM RequestTable WHERE studentID = ?");
+                if (!$deleteRequests) {
+                    throw new Exception("Database error: " . $conn->error);
+                }
+                $deleteRequests->bind_param("i", $studentID);
+                $deleteRequests->execute();
+                $deleteRequests->close();
+                
+                // Delete the student
+                $deleteStudent = $conn->prepare("DELETE FROM StudentInformation WHERE studentID = ?");
+                if (!$deleteStudent) {
+                    throw new Exception("Database error: " . $conn->error);
+                }
+                $deleteStudent->bind_param("i", $studentID);
+                $deleteStudent->execute();
+                
+                if ($deleteStudent->affected_rows > 0) {
+                    $conn->commit();
+                    $response['success'] = true;
+                    $response['message'] = "Student and all associated requests deleted successfully!";
+                } else {
+                    throw new Exception("No student found with that ID.");
+                }
+                
+                $deleteStudent->close();
+            } catch (Exception $e) {
+                $conn->rollback();
+                throw $e;
+            }
+        } else {
+            throw new Exception("Incorrect password.");
+        }
+    } else {
+        throw new Exception("User not found.");
+    }
+    
+    $stmt->close();
+} catch (Exception $e) {
+    $response['error'] = $e->getMessage();
 }
 
-if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    $_SESSION['error'] = "Invalid student ID.";
-    header("Location: ../admin/manage_students.php");
-    exit();
-}
-
-$studentID = intval($_GET['id']);
-
-// Ensure database connection exists
-if (!$conn) {
-    die("Database connection failed: " . mysqli_connect_error());
-}
-
-// Delete related requests first
-$deleteRequests = $conn->prepare("DELETE FROM RequestTable WHERE studentID = ?");
-$deleteRequests->bind_param("i", $studentID);
-$deleteRequests->execute();
-$deleteRequests->close();
-
-// Now delete the student
-$deleteStudent = $conn->prepare("DELETE FROM StudentInformation WHERE studentID = ?");
-$deleteStudent->bind_param("i", $studentID);
-
-if ($deleteStudent->execute()) {
-    $_SESSION['message'] = "Student deleted successfully!";
-} else {
-    $_SESSION['error'] = "Failed to delete student. Error: " . $deleteStudent->error;
-}
-
-$deleteStudent->close();
 $conn->close();
-
-// Redirect back
-header("Location: ../admin/manage_students.php");
+echo json_encode($response);
 exit();
+?>

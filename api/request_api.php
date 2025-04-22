@@ -6,13 +6,22 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET': // Fetch requests with student & document info
-        $stmt = $conn->prepare("SELECT r.requestID, r.requestCode, 
-    DATE_FORMAT(r.dateRequest, '%Y-%m-%d %H:%i:%s') AS dateRequest, 
-    r.requestStatus, s.firstname, s.lastname, d.documentName 
+        $stmt = $conn->prepare("SELECT 
+        r.requestID, 
+        r.requestCode, 
+        DATE_FORMAT(r.dateRequest, '%Y-%m-%d %H:%i:%s') AS dateRequest, 
+        DATE_FORMAT(r.datePickUp, '%Y-%m-%d') AS datePickUp, 
+        DATE_FORMAT(r.dateRelease, '%Y-%m-%d %H:%i:%s') AS dateRelease, 
+        r.requestStatus, 
+        s.firstname, 
+        s.lastname, 
+        d.documentName 
     FROM RequestTable r 
     JOIN StudentInformation s ON r.studentID = s.studentID 
     JOIN DocumentsType d ON r.documentID = d.documentID 
+    WHERE r.dateDeleted IS NULL
     ORDER BY r.dateRequest DESC");
+    
 
 
         
