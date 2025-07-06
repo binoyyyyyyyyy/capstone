@@ -2,6 +2,9 @@
 session_start();
 date_default_timezone_set('Asia/Manila');
 require_once '../config/config.php';
+require '../vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 $documentQuery = $conn->query("SELECT documentID, documentName, procTime, documentStatus FROM DocumentsType WHERE dateDeleted IS NULL");
 $documents = $documentQuery->fetch_all(MYSQLI_ASSOC);
@@ -20,9 +23,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dateRequest = date('Y-m-d H:i:s');
     $datePickUp = $_POST['datePickUp'];
     $nameOfReceiver = $_POST['nameOfReceiver'];
+    $relationship = isset($_POST['relationship']) ? $_POST['relationship'] : '';
     $userID = $_SESSION['user_id'];
     $documentsToProcess = $_POST['documentID'];
     $fullName = $firstName . ' ' . $lastName;
+    $immediateFamily = ['Father', 'Mother', 'Brother', 'Sister', 'Spouse', 'Child'];
+    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 
     // Validate student information
     $studentCheck = $conn->prepare("SELECT studentID FROM StudentInformation WHERE studentNo = ? AND firstName = ? AND lastName = ? AND dateDeleted IS NULL");
@@ -57,12 +63,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $allowedTypes = array('jpg', 'jpeg', 'png', 'pdf');
 
     // Process authorization image (required if receiver isn't student OR TOR is selected)
-    if (($nameOfReceiver !== $fullName) && empty($_FILES['authorizationImage']['name'])) {
-        $_SESSION['error'] = $torSelected 
-            ? "Authorization image is required for  requests." 
-            : "Authorization image is required when receiver's name doesn't match the student's full name.";
-        header("Location: request_form.php");
-        exit();
+    if ($nameOfReceiver !== $fullName) {
+        if (empty($relationship)) {
+            $_SESSION['error'] = "Please specify the relationship to the student.";
+            header("Location: request_form.php");
+            exit();
+        }
+        if (!in_array($relationship, $immediateFamily) && empty($_FILES['authorizationImage']['name'])) {
+            $_SESSION['error'] = "If the receiver is not immediate family, an authorization letter/image must be uploaded.";
+            header("Location: request_form.php");
+            exit();
+        }
+    } else {
+        $relationship = 'Self';
     }
 
     if (!empty($_FILES['authorizationImage']['name'])) {
@@ -155,6 +168,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $duplicateDocuments = [];
     $generatedRequestCodes = [];
 
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['error'] = "A valid email address is required.";
+        header("Location: request_form.php");
+        exit();
+    }
+
     foreach ($documentsToProcess as $documentID) {
         if (!isset($documentDetails[$documentID])) {
             continue;
@@ -175,10 +194,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Insert into RequestTable
         $stmt = $conn->prepare("INSERT INTO RequestTable 
-            (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, dateCreated) 
-            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, NOW())");
-        $stmt->bind_param("siiissss", $requestCode, $documentID, $userID, $studentID, 
-            $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver);
+            (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, dateCreated, relationship, email) 
+            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), ?, ?)");
+        $stmt->bind_param("siiissssss", $requestCode, $documentID, $userID, $studentID, 
+            $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $relationship, $email);
         
         if ($stmt->execute()) {
             $successCount++;
@@ -201,6 +220,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insertImage->bind_param("sis", $supNo, $requestID, $verificationImage);
                 $insertImage->execute();
                 $insertImage->close();
+            }
+
+            // Fetch email, request code, and status from the database
+            $stmt2 = $conn->prepare("SELECT email, requestCode, requestStatus FROM RequestTable WHERE requestID = ?");
+            $stmt2->bind_param("i", $requestID);
+            $stmt2->execute();
+            $stmt2->bind_result($email, $requestCode, $requestStatus);
+            $stmt2->fetch();
+            $stmt2->close();
+
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                $mail->Username   = 'emailtestingsendeer@gmail.com';
+                $mail->Password   = 'gknv xrds xvqb drjz';
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
+
+                $mail->setFrom('emailtestingsendeer@gmail.com', 'NEUST Registrar');
+                $mail->addAddress($email, $firstName . ' ' . $lastName);
+
+                $mail->isHTML(true);
+                $mail->Subject = 'Document Request Submitted';
+                $mail->Body    = "Dear $firstName $lastName,<br>Your document request has been submitted.<br>Your request code: <b>$requestCode</b>.<br>Thank you!";
+                $mail->AltBody = "Dear $firstName $lastName,\\nYour document request has been submitted.\\nYour request code: $requestCode.\\nThank you!";
+
+                $mail->send();
+            } catch (Exception $e) {
+                // Optionally log error: $mail->ErrorInfo
             }
         }
         $stmt->close();
@@ -603,6 +653,7 @@ include '../includes/index_nav.php';
                             <hr class="my-4">
                             
                             <h5 class="mb-3"><i class="bi bi-person-lines-fill me-2"></i>Student Information</h5>
+                            
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
                                     <label for="studentNo" class="form-label required-field">Student Number</label>
@@ -616,7 +667,12 @@ include '../includes/index_nav.php';
                                     <label for="lastName" class="form-label required-field">Last Name</label>
                                     <input type="text" class="form-control" id="lastName" name="lastName" required>
                                 </div>
+                               <div class="col-md-4">
+                                   <label for="email" class="form-label required-field">Email</label>
+                                   <input type="email" class="form-control" id="email" name="email" required>
+                              </div>
                             </div>
+
                             
                             <hr class="my-4">
                             
@@ -625,11 +681,28 @@ include '../includes/index_nav.php';
                                 <div class="col-md-6">
                                     <label for="datePickUp" class="form-label required-field">Pick-up Date</label>
                                     <input type="date" class="form-control" id="datePickUp" name="datePickUp" required>
+                                    <small class="text-warning">Consider holidays when releasing the requested document.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="nameOfReceiver" class="form-label required-field">Name of Receiver</label>
                                     <input type="text" class="form-control" id="nameOfReceiver" name="nameOfReceiver" required>
                                     <small class="text-muted">Must match student name unless authorization is provided</small>
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-4" id="relationshipRow" style="display:none;">
+                                <div class="col-md-6">
+                                    <label for="relationship" class="form-label required-field">Relationship to Student</label>
+                                    <select class="form-control" id="relationship" name="relationship">
+                                        <option value="">Select relationship</option>
+                                        <option value="Father">Father</option>
+                                        <option value="Mother">Mother</option>
+                                        <option value="Brother">Brother</option>
+                                        <option value="Sister">Sister</option>
+                                        <option value="Spouse">Spouse</option>
+                                        <option value="Child">Child</option>
+                                        <option value="Other">Other (requires letter of power)</option>
+                                    </select>
+                                    <small class="text-muted">If not immediate family, upload a letter of power.</small>
                                 </div>
                             </div>
                             
@@ -806,6 +879,41 @@ include '../includes/index_nav.php';
                 }, false)
             })
         })()
+
+        // Show/hide relationship field based on receiver name
+        document.getElementById('nameOfReceiver').addEventListener('input', function() {
+            const studentFirst = document.getElementById('firstName').value.trim().toLowerCase();
+            const studentLast = document.getElementById('lastName').value.trim().toLowerCase();
+            const receiver = this.value.trim().toLowerCase();
+            const fullName = (studentFirst + ' ' + studentLast).trim();
+            const relationshipRow = document.getElementById('relationshipRow');
+            if (receiver && receiver !== fullName) {
+                relationshipRow.style.display = '';
+            } else {
+                relationshipRow.style.display = 'none';
+                document.getElementById('relationship').value = '';
+            }
+        });
+
+        // Holiday blocking for pick-up date
+        const holidays = [
+            // 2024
+            "2024-01-01", "2024-02-10", "2024-02-25", "2024-03-28", "2024-03-29", "2024-03-30", "2024-04-09", "2024-04-10", "2024-05-01", "2024-06-12", "2024-06-16", "2024-08-21", "2024-08-26", "2024-11-01", "2024-11-02", "2024-11-30", "2024-12-08", "2024-12-24", "2024-12-25", "2024-12-30", "2024-12-31",
+            // 2025
+            "2025-01-01", "2025-01-29", "2025-02-25", "2025-04-17", "2025-04-18", "2025-04-19", "2025-04-09", "2025-03-31", "2025-05-01", "2025-06-12", "2025-06-07", "2025-08-21", "2025-08-25", "2025-11-01", "2025-11-02", "2025-11-30", "2025-12-08", "2025-12-24", "2025-12-25", "2025-12-30", "2025-12-31",
+            // 2026
+            "2026-01-01", "2026-02-17", "2026-02-25", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-09", "2026-03-20", "2026-05-01", "2026-06-12", "2026-05-27", "2026-08-21", "2026-08-31", "2026-11-01", "2026-11-02", "2026-11-30", "2026-12-08", "2026-12-24", "2026-12-25", "2026-12-30", "2026-12-31",
+            // 2027
+            "2027-01-01", "2027-02-06", "2027-02-25", "2027-03-25", "2027-03-26", "2027-03-27", "2027-04-09", "2027-03-10", "2027-05-01", "2027-06-12", "2027-05-17", "2027-08-21", "2027-08-30", "2027-11-01", "2027-11-02", "2027-11-30", "2027-12-08", "2027-12-24", "2027-12-25", "2027-12-30", "2027-12-31",
+            // 2028
+            "2028-01-01"
+        ];
+        document.getElementById('datePickUp').addEventListener('input', function() {
+            if (holidays.includes(this.value)) {
+                alert('Selected date is a holiday. Please choose another date.');
+                this.value = '';
+            }
+        });
     </script>
 
     <?php if (isset($_SESSION['generatedCodes'])): ?>

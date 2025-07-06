@@ -1,6 +1,9 @@
 <?php
 session_start();
 require_once '../config/config.php';
+require '../vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 // Check if admin is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -83,10 +86,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt->execute()) {
         $_SESSION['message'] = "Request #" . $request['requestCode'] . " updated successfully!";
 
-        // Example: handle verification flag (if you want to log or process it in future)
-        // if ($newStatus == 'rejected' && $askForVerification) {
-        //     // You can add an extra query here to log or flag the student for document verification.
-        // }
+        // Fetch email, request code, status, and remarks from the database
+        $stmt2 = $conn->prepare("SELECT email, requestCode, requestStatus, remarks FROM RequestTable WHERE requestID = ?");
+        $stmt2->bind_param("i", $requestID);
+        $stmt2->execute();
+        $stmt2->bind_result($email, $requestCode, $requestStatus, $remarks);
+        $stmt2->fetch();
+        $stmt2->close();
+
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'emailtestingsendeer@gmail.com';
+            $mail->Password   = 'gknv xrds xvqb drjz';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = 587;
+
+            $mail->setFrom('emailtestingsendeer@gmail.com', 'NEUST Registrar');
+            $mail->addAddress($email);
+
+            $mail->isHTML(true);
+            $mail->Subject = 'Update on Your Document Request';
+            $mail->Body    = "Dear Student,<br>Your request <b>$requestCode</b> status is now: <b>$requestStatus</b>.<br>Remarks: $remarks<br>Thank you!";
+            $mail->AltBody = "Dear Student,\nYour request $requestCode status is now: $requestStatus.\nRemarks: $remarks\nThank you!";
+
+            $mail->send();
+        } catch (Exception $e) {
+            // Optionally log error: $mail->ErrorInfo
+        }
 
         header("Location: manage_request.php");
         exit();

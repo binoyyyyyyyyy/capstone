@@ -7,6 +7,16 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_type'] !== 'admin') {
     header("Location: ../login.php");
     exit();
 }
+
+// Auto-generate next Document Code
+$nextCode = 'DOC-001';
+$result = $conn->query("SELECT documentCode FROM DocumentsType ORDER BY documentID DESC LIMIT 1");
+if ($result && $row = $result->fetch_assoc()) {
+    if (preg_match('/DOC-(\\d+)/', $row['documentCode'], $matches)) {
+        $num = intval($matches[1]) + 1;
+        $nextCode = 'DOC-' . str_pad($num, 3, '0', STR_PAD_LEFT);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -115,10 +125,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_type'] !== 'admin') {
                                 <div class="col-md-6">
                                     <div class="floating-label">
                                         <label for="documentCode" class="required-field">Document Code</label>
-                                        <input type="text" id="documentCode" name="documentCode" class="form-control" 
-                                               placeholder="DOC-001" required>
+                                        <input type="text" id="documentCode" name="documentCode" class="form-control" value="<?php echo htmlspecialchars($nextCode); ?>" readonly required>
                                         <div class="invalid-feedback">
-                                            Please provide a document code.
+                                            Document code will be generated automatically.
                                         </div>
                                     </div>
                                 </div>

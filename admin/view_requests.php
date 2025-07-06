@@ -13,18 +13,35 @@ $requestID = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 // Fetch the selected request
 $stmt = $conn->prepare("SELECT r.requestID, r.requestCode, r.dateRequest, r.requestStatus, 
-    s.firstname, s.lastname, d.documentName, r.datePickUp, r.nameOfReceiver, r.remarks, 
-    si.image, si.additionalimage
+    s.firstname, s.lastname, d.documentName, r.datePickUp, r.nameOfReceiver, r.remarks
     FROM RequestTable r
     JOIN studentInformation s ON r.studentID = s.studentID
     JOIN DocumentsType d ON r.documentID = d.documentID
-    LEFT JOIN supportingimage si ON r.requestID = si.requestID
     WHERE r.requestID = ?");
 $stmt->bind_param("i", $requestID);
 $stmt->execute();
 $result = $stmt->get_result();
 $request = $result->fetch_assoc();
 $stmt->close();
+
+// Fetch images separately to handle multiple images per request
+$imageStmt = $conn->prepare("SELECT image, additionalimage FROM supportingimage WHERE requestID = ?");
+$imageStmt->bind_param("i", $requestID);
+$imageStmt->execute();
+$imageResult = $imageStmt->get_result();
+
+$authorizationImage = null;
+$verificationImage = null;
+
+while ($imageRow = $imageResult->fetch_assoc()) {
+    if (!empty($imageRow['image'])) {
+        $authorizationImage = $imageRow['image'];
+    }
+    if (!empty($imageRow['additionalimage'])) {
+        $verificationImage = $imageRow['additionalimage'];
+    }
+}
+$imageStmt->close();
 
 // If no request is found
 if (!$request) {
@@ -124,14 +141,14 @@ function getStatusBadge($status) {
                             </div>
                         </div>
 
-                        <?php if (!empty($request['image'])): ?>
+                        <?php if (!empty($authorizationImage)): ?>
                         <div class="row mt-3">
                             <div class="col-12">
                                 <div class="card detail-card">
                                     <div class="card-body">
                                         <h5 class="card-title text-primary mb-4"><i class="bi bi-image me-2"></i>Authorization Image</h5>
                                         <div class="text-center">
-                                            <img src="../uploads/<?php echo htmlspecialchars($request['image']); ?>" 
+                                            <img src="../uploads/<?php echo htmlspecialchars($authorizationImage); ?>" 
                                                  class="img-preview img-fluid rounded" 
                                                  style="max-height: 400px;"
                                                  data-bs-toggle="modal" 
@@ -143,14 +160,14 @@ function getStatusBadge($status) {
                         </div>
                         <?php endif; ?>
 
-                        <?php if (!empty($request['additionalimage'])): ?>
+                        <?php if (!empty($verificationImage)): ?>
                         <div class="row mt-3">
                             <div class="col-12">
                                 <div class="card detail-card">
                                     <div class="card-body">
                                         <h5 class="card-title text-primary mb-4"><i class="bi bi-image me-2"></i>Verification Image</h5>
                                         <div class="text-center">
-                                            <img src="../uploads/<?php echo htmlspecialchars($request['additionalimage']); ?>" 
+                                            <img src="../uploads/<?php echo htmlspecialchars($verificationImage); ?>" 
                                                  class="img-preview img-fluid rounded" 
                                                  style="max-height: 400px;"
                                                  data-bs-toggle="modal" 
@@ -177,7 +194,7 @@ function getStatusBadge($status) {
         </div>
     </div>
 
-    <?php if (!empty($request['image'])): ?>
+    <?php if (!empty($authorizationImage)): ?>
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
@@ -186,31 +203,31 @@ function getStatusBadge($status) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <img src="../uploads/<?php echo htmlspecialchars($request['image']); ?>" class="img-fluid">
+                    <img src="../uploads/<?php echo htmlspecialchars($authorizationImage); ?>" class="img-fluid">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <a href="../uploads/<?php echo htmlspecialchars($request['image']); ?>" download class="btn btn-primary"><i class="bi bi-download me-1"></i> Download</a>
+                    <a href="../uploads/<?php echo htmlspecialchars($authorizationImage); ?>" download class="btn btn-primary"><i class="bi bi-download me-1"></i> Download</a>
                 </div>
             </div>
         </div>
     </div>
     <?php endif; ?>
 
-    <?php if (!empty($request['additionalimage'])): ?>
+    <?php if (!empty($verificationImage)): ?>
     <div class="modal fade" id="additionalImageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Additional Supporting Document</h5>
+                    <h5 class="modal-title">Verification Image</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <img src="../uploads/<?php echo htmlspecialchars($request['additionalimage']); ?>" class="img-fluid">
+                    <img src="../uploads/<?php echo htmlspecialchars($verificationImage); ?>" class="img-fluid">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <a href="../uploads/<?php echo htmlspecialchars($request['additionalimage']); ?>" download class="btn btn-primary"><i class="bi bi-download me-1"></i> Download</a>
+                    <a href="../uploads/<?php echo htmlspecialchars($verificationImage); ?>" download class="btn btn-primary"><i class="bi bi-download me-1"></i> Download</a>
                 </div>
             </div>
         </div>
