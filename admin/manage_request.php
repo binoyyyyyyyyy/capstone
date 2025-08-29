@@ -176,6 +176,75 @@ $role = $_SESSION['role_type']; // Get user role
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
+            }
+            
+            .topbar {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between > div {
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th, .table td {
+                padding: 8px 4px;
+                white-space: nowrap;
+            }
+            
+            .action-btn {
+                width: 28px;
+                height: 28px;
+                margin: 2px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 5px;
+            }
+            
+            .topbar {
+                padding: 10px 15px;
+            }
+            
+            .page-title {
+                font-size: 1.1rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+            
+            .table th, .table td {
+                padding: 6px 2px;
+            }
+            
+            .action-btn {
+                width: 26px;
+                height: 26px;
+                margin: 1px;
+            }
+            
+            .badge {
+                font-size: 0.7rem;
+                padding: 0.3em 0.5em;
             }
         }
         .badge-completed {
@@ -240,11 +309,11 @@ $role = $_SESSION['role_type']; // Get user role
 
 
         <!-- Filter & Search Controls -->
-<div class="row mb-3">
-    <div class="col-md-4">
+<div class="row mb-3 g-2">
+    <div class="col-12 col-md-4">
         <input type="text" id="searchInput" class="form-control" placeholder="Search by name or request code...">
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <select id="filterStatus" class="form-select">
             <option value="">All Statuses</option>
             <option value="Pending">Pending</option>
@@ -254,11 +323,16 @@ $role = $_SESSION['role_type']; // Get user role
             <option value="Completed">Completed</option>
         </select>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <select id="filterDocument" class="form-select">
             <option value="">All Documents</option>
             <!-- Options will be filled dynamically -->
         </select>
+    </div>
+    <div class="col-12 d-md-none">
+        <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+            <i class="bi bi-arrow-clockwise"></i> Reset Filters
+        </button>
     </div>
 </div>
 
@@ -266,18 +340,18 @@ $role = $_SESSION['role_type']; // Get user role
         <!-- Requests Table -->
         <div class="card">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table class="table table-hover align-middle" style="min-width: 800px;">
                         <thead>
                             <tr>
-                                <th>Request Code</th>
-                                <th>Student Name</th>
-                                <th>Document</th>
-                                <th>Date Requested</th>
-                                <th>Date Pickup</th>
-                                <th>Date Release</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th style="min-width: 120px;">Request Code</th>
+                                <th style="min-width: 120px;">Student Name</th>
+                                <th style="min-width: 120px;">Document</th>
+                                <th style="min-width: 130px;">Date Requested</th>
+                                <th style="min-width: 100px;">Date Pickup</th>
+                                <th style="min-width: 100px;">Date Release</th>
+                                <th style="min-width: 100px;">Status</th>
+                                <th style="min-width: 100px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="requestTableBody">
@@ -463,8 +537,16 @@ function populateDocumentDropdown(requests) {
     });
 }
 
-// Bind filter events
+        // Bind filter events
 $('#searchInput, #filterStatus, #filterDocument').on('input change', applyFilters);
+
+// Reset filters function
+function resetFilters() {
+    $('#searchInput').val('');
+    $('#filterStatus').val('');
+    $('#filterDocument').val('');
+    applyFilters();
+}
 
 
 

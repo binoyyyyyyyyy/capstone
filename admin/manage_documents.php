@@ -188,6 +188,80 @@ $result = $stmt->get_result();
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
+            }
+            
+            .topbar {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between > div {
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th, .table td {
+                padding: 8px 4px;
+                white-space: nowrap;
+            }
+            
+            .action-btn {
+                width: 28px;
+                height: 28px;
+                margin: 2px;
+            }
+            
+            .badge {
+                font-size: 0.7rem;
+                padding: 0.3em 0.5em;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 5px;
+            }
+            
+            .topbar {
+                padding: 10px 15px;
+            }
+            
+            .page-title {
+                font-size: 1.1rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+            
+            .table th, .table td {
+                padding: 6px 2px;
+            }
+            
+            .action-btn {
+                width: 26px;
+                height: 26px;
+                margin: 1px;
+            }
+            
+            .badge {
+                font-size: 0.65rem;
+                padding: 0.25em 0.4em;
             }
         }
     </style>
@@ -235,16 +309,16 @@ $result = $stmt->get_result();
 
         <div class="card">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table class="table table-hover align-middle" style="min-width: 700px;">
                         <thead>
                             <tr>
-                                <th>Document Code</th>
-                                <th>Document Name</th>
-                                <th>Description</th>
-                                <th>Processing Time</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th style="min-width: 120px;">Document Code</th>
+                                <th style="min-width: 150px;">Document Name</th>
+                                <th style="min-width: 200px;">Description</th>
+                                <th style="min-width: 120px;">Processing Time</th>
+                                <th style="min-width: 80px;">Status</th>
+                                <th style="min-width: 100px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>

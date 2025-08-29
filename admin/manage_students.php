@@ -236,6 +236,106 @@ $result = $conn->query($sql);
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
+            }
+            
+            .topbar {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between > div {
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th, .table td {
+                padding: 8px 4px;
+                white-space: nowrap;
+            }
+            
+            .action-btn {
+                width: 28px;
+                height: 28px;
+                margin: 2px;
+            }
+            
+            .status-badge {
+                font-size: 0.7rem;
+                padding: 0.3em 0.5em;
+            }
+            
+            .mb-4.row.g-2 {
+                margin-bottom: 1rem !important;
+            }
+            
+            .col-md-3 {
+                margin-bottom: 10px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-group .form-control {
+                border-radius: 0.375rem !important;
+                margin-bottom: 10px;
+            }
+            
+            .input-group .btn {
+                border-radius: 0.375rem !important;
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 5px;
+            }
+            
+            .topbar {
+                padding: 10px 15px;
+            }
+            
+            .page-title {
+                font-size: 1.1rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+            
+            .table th, .table td {
+                padding: 6px 2px;
+            }
+            
+            .action-btn {
+                width: 26px;
+                height: 26px;
+                margin: 1px;
+            }
+            
+            .status-badge {
+                font-size: 0.65rem;
+                padding: 0.25em 0.4em;
+            }
+            
+            .mb-4.row.g-2 {
+                margin-bottom: 0.5rem !important;
             }
         }
         .button{
@@ -268,50 +368,53 @@ $result = $conn->query($sql);
                 </a>
             </div>
         </div>
-<div class="col-md-1 mt-2">
-    <button class="btn btn-secondary w-90" style="margin-left:1130px; background-color:red;" onclick="resetFilters()">Reset</button>
-</div>
-
         <div class="mb-4 row g-2 align-items-end">
-    <div class="col-md-3">
-        <label for="filterStatus" class="form-label">Status</label>
-        <select id="filterStatus" class="form-select">
-            <option value="">All</option>
-            <option value="Regular">Regular</option>
-            <option value="Irregular">Irregular</option>
-            <option value="Transferee">Transferee</option>
-            <option value="Returnee">Returnee</option>
-            <option value="Graduated">Graduated</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <label for="filterYear" class="form-label">Year Level</label>
-        <select id="filterYear" class="form-select">
-            <option value="">All</option>
-            <option value="1st Year">1st Year</option>
-            <option value="2nd Year">2nd Year</option>
-            <option value="3rd Year">3rd Year</option>
-            <option value="4th Year">4th Year</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <label for="filterCourse" class="form-label">Course</label>
-        <select id="filterCourse" class="form-select">
-            <option value="">All</option>
-            <?php
-            // Populate course dropdown
-            $courseQuery = $conn->query("SELECT courseName FROM coursetable");
-            while ($course = $courseQuery->fetch_assoc()) {
-                echo '<option value="' . htmlspecialchars($course['courseName']) . '">' . htmlspecialchars($course['courseName']) . '</option>';
-            }
-            ?>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <label for="searchInput" class="form-label">Search Student No / Name</label>
-        <input type="text" id="searchInput" class="form-control" placeholder="e.g. 2021-12345 or Juan Dela Cruz">
-    </div>
-</div>
+            <div class="col-md-3">
+                <label for="filterStatus" class="form-label">Status</label>
+                <select id="filterStatus" class="form-select">
+                    <option value="">All</option>
+                    <option value="Regular">Regular</option>
+                    <option value="Irregular">Irregular</option>
+                    <option value="Transferee">Transferee</option>
+                    <option value="Returnee">Returnee</option>
+                    <option value="Graduated">Graduated</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterYear" class="form-label">Year Level</label>
+                <select id="filterYear" class="form-select">
+                    <option value="">All</option>
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="filterCourse" class="form-label">Course</label>
+                <select id="filterCourse" class="form-select">
+                    <option value="">All</option>
+                    <?php
+                    // Populate course dropdown
+                    $courseQuery = $conn->query("SELECT courseName FROM coursetable");
+                    while ($course = $courseQuery->fetch_assoc()) {
+                        echo '<option value="' . htmlspecialchars($course['courseName']) . '">' . htmlspecialchars($course['courseName']) . '</option>';
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="searchInput" class="form-label">Search Student No / Name</label>
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="e.g. 2021-12345 or Juan Dela Cruz">
+                    <button class="btn btn-outline-secondary" type="button" onclick="resetFilters()">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
 
 
 
@@ -322,20 +425,20 @@ $result = $conn->query($sql);
 
         <div class="card">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table class="table table-hover align-middle" style="min-width: 900px;">
                         <thead>
                             <tr>
-                                <th>Student No</th>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>Year</th>
-                                <th>Course</th>
-                                <th>Major</th>
-                                <th>Contact</th>
-                                <th>Added By</th>
-                                <th>Edited By</th>
-                                <th>Actions</th>
+                                <th style="min-width: 100px;">Student No</th>
+                                <th style="min-width: 120px;">Name</th>
+                                <th style="min-width: 80px;">Status</th>
+                                <th style="min-width: 80px;">Year</th>
+                                <th style="min-width: 120px;">Course</th>
+                                <th style="min-width: 120px;">Major</th>
+                                <th style="min-width: 100px;">Contact</th>
+                                <th style="min-width: 100px;">Added By</th>
+                                <th style="min-width: 100px;">Edited By</th>
+                                <th style="min-width: 100px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>

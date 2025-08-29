@@ -259,6 +259,81 @@ $result = $stmt->get_result();
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
+            }
+            
+            .topbar {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between > div {
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+            
+            .table th, .table td {
+                padding: 8px 4px;
+                white-space: nowrap;
+            }
+            
+            .action-btn {
+                width: 28px;
+                height: 28px;
+                margin: 2px;
+            }
+            
+            .user-initials {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 5px;
+            }
+            
+            .topbar {
+                padding: 10px 15px;
+            }
+            
+            .page-title {
+                font-size: 1.1rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+            
+            .table th, .table td {
+                padding: 6px 2px;
+            }
+            
+            .action-btn {
+                width: 26px;
+                height: 26px;
+                margin: 1px;
+            }
+            
+            .role-badge, .status-badge {
+                font-size: 0.7rem;
+                padding: 0.3em 0.5em;
             }
         }
     </style>
@@ -305,17 +380,17 @@ $result = $stmt->get_result();
 
         <div class="card">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table class="table table-hover align-middle" style="min-width: 700px;">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Added By</th>
-                                <th>Edited By</th>
-                                <th>Actions</th>
+                                <th style="min-width: 120px;">Name</th>
+                                <th style="min-width: 150px;">Email</th>
+                                <th style="min-width: 80px;">Role</th>
+                                <th style="min-width: 80px;">Status</th>
+                                <th style="min-width: 100px;">Added By</th>
+                                <th style="min-width: 100px;">Edited By</th>
+                                <th style="min-width: 100px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>

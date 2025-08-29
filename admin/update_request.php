@@ -417,12 +417,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             .main-content {
                 margin-left: 0;
             }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .col-lg-8 {
+                padding: 0;
+            }
+            
+            .card {
+                margin-left: 0;
+            }
+            
+            .card-header {
+                padding: 1rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .back-btn {
+                position: relative;
+                left: auto;
+                top: auto;
+                margin-bottom: 1rem;
+            }
         }
+        
+        @media (max-width: 576px) {
+            .container {
+                padding: 5px;
+            }
+            
+            .card-header {
+                padding: 0.75rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .request-info {
+                padding: 0.75rem;
+            }
+        }
+        
         .card {
             border: none;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            margin-left:150px;
+            margin-left: 150px;
         }
         .card-header {
             background: linear-gradient(135deg, var(--neust-blue), #007bff);
