@@ -2,6 +2,8 @@
 session_start();
 require_once '../config/config.php';
 require '../vendor/autoload.php';
+require_once '../config/pusher_config.php';
+include '../includes/sidevar.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -86,6 +88,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt->execute()) {
         $_SESSION['message'] = "Request #" . $request['requestCode'] . " updated successfully!";
 
+        // Send Pusher notification for status update
+        $notificationData = array(
+            'type' => 'status_update',
+            'requestCode' => $request['requestCode'],
+            'studentName' => $request['firstname'] . ' ' . $request['lastname'],
+            'documentName' => $request['documentName'],
+            'oldStatus' => $request['requestStatus'],
+            'newStatus' => $newStatus,
+            'message' => "Request status updated: $requestCode - $newStatus"
+        );
+        sendPusherNotification('admin-channel', 'status-update', $notificationData);
+
         // Fetch email, request code, status, and remarks from the database
         $stmt2 = $conn->prepare("SELECT email, requestCode, requestStatus, remarks FROM RequestTable WHERE requestID = ?");
         $stmt2->bind_param("i", $requestID);
@@ -93,6 +107,106 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt2->bind_result($email, $requestCode, $requestStatus, $remarks);
         $stmt2->fetch();
         $stmt2->close();
+
+        // Fetch document description
+        $stmt3 = $conn->prepare("SELECT documentDesc FROM DocumentsType WHERE documentID = (SELECT documentID FROM RequestTable WHERE requestID = ?)");
+        $stmt3->bind_param("i", $requestID);
+        $stmt3->execute();
+        $stmt3->bind_result($documentDesc);
+        $stmt3->fetch();
+        $stmt3->close();
+
+        // Prepare email content based on status
+        $subject = '';
+        $body = '';
+        $altBody = '';
+        
+        switch($newStatus) {
+            case 'approved':
+                $subject = 'Document Request Approved – NEUST-MGT Registrar';
+                $body = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",<br><br>";
+                $body .= "Your request for <strong>" . $request['documentName'] . "</strong> (" . $documentDesc . ") (Request CODE: <strong>" . $requestCode . "</strong>) has been approved.<br>";
+                $body .= "Our office will begin preparing your requested document. Please check your portal for updates on the processing timeline.<br><br>";
+                $body .= "Best regards,<br>NEUST-MGT Registrar Admin";
+                
+                $altBody = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",\n\n";
+                $altBody .= "Your request for " . $request['documentName'] . " (" . $documentDesc . ") (Request CODE: " . $requestCode . ") has been approved.\n";
+                $altBody .= "Our office will begin preparing your requested document. Please check your portal for updates on the processing timeline.\n\n";
+                $altBody .= "Best regards,\nNEUST-MGT Registrar Admin";
+                break;
+                
+            case 'rejected':
+                $subject = 'Document Request Rejected – NEUST-MGT Registrar';
+                $body = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",<br><br>";
+                $body .= "We regret to inform you that your request for <strong>" . $request['documentName'] . "</strong> (" . $documentDesc . ") (Request CODE: <strong>" . $requestCode . "</strong>) has been rejected.<br><br>";
+                if ($remarks) {
+                    $body .= "<strong>Reason:</strong> " . $remarks . "<br><br>";
+                }
+                $body .= "Should you have questions or wish to reapply, kindly reach out to our office.<br><br>";
+                $body .= "Sincerely,<br>NEUST-MGT Registrar Admin";
+                
+                $altBody = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",\n\n";
+                $altBody .= "We regret to inform you that your request for " . $request['documentName'] . " (" . $documentDesc . ") (Request CODE: " . $requestCode . ") has been rejected.\n\n";
+                if ($remarks) {
+                    $altBody .= "Reason: " . $remarks . "\n\n";
+                }
+                $altBody .= "Should you have questions or wish to reapply, kindly reach out to our office.\n\n";
+                $altBody .= "Sincerely,\nNEUST-MGT Registrar Admin";
+                break;
+                
+            case 'ready to pickup':
+                $subject = 'Requested Document Ready for Pickup – NEUST-MGT Registrar';
+                $body = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",<br><br>";
+                $body .= "Your requested document <strong>" . $request['documentName'] . "</strong> (" . $documentDesc . ") (Request CODE: <strong>" . $requestCode . "</strong>) is now ready for pickup at the NEUST-MGT Registrar's Office.<br><br>";
+                $body .= "📅 <strong>Pickup Date:</strong> " . ($datePickUp ? date('F j, Y', strtotime($datePickUp)) : 'To be announced') . "<br>";
+                $body .= "📍 <strong>Location:</strong> NEUST-MGT Registrar's Office<br>";
+                $body .= "🕒 <strong>Office Hours:</strong> Monday to Friday, 8:00 AM - 5:00 PM<br><br>";
+                $body .= "Please bring a valid ID and your request reference number when claiming your document.<br><br>";
+                $body .= "Thank you,<br>NEUST-MGT Registrar Admin";
+                
+                $altBody = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",\n\n";
+                $altBody .= "Your requested document " . $request['documentName'] . " (" . $documentDesc . ") (Request CODE: " . $requestCode . ") is now ready for pickup at the NEUST-MGT Registrar's Office.\n\n";
+                $altBody .= "Pickup Date: " . ($datePickUp ? date('F j, Y', strtotime($datePickUp)) : 'To be announced') . "\n";
+                $altBody .= "Location: NEUST-MGT Registrar's Office\n";
+                $altBody .= "Office Hours: Monday to Friday, 8:00 AM - 5:00 PM\n\n";
+                $altBody .= "Please bring a valid ID and your request reference number when claiming your document.\n\n";
+                $altBody .= "Thank you,\nNEUST-MGT Registrar Admin";
+                break;
+                
+            case 'completed':
+                $subject = 'Document Request Completed – NEUST-MGT Registrar';
+                $body = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",<br><br>";
+                $body .= "Your document request for <strong>" . $request['documentName'] . "</strong> (" . $documentDesc . ") (Request CODE: <strong>" . $requestCode . "</strong>) has been completed.<br><br>";
+                $body .= "We hope the provided document will be of help to your academic or professional needs.<br><br>";
+                $body .= "Thank you for using the NEUST-MGT Registrar's services.<br><br>";
+                $body .= "Best regards,<br>NEUST-MGT Registrar Admin";
+                
+                $altBody = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",\n\n";
+                $altBody .= "Your document request for " . $request['documentName'] . " (" . $documentDesc . ") (Request CODE: " . $requestCode . ") has been completed.\n\n";
+                $altBody .= "We hope the provided document will be of help to your academic or professional needs.\n\n";
+                $altBody .= "Thank you for using the NEUST-MGT Registrar's services.\n\n";
+                $altBody .= "Best regards,\nNEUST-MGT Registrar Admin";
+                break;
+                
+            default:
+                $subject = 'Update on Your Document Request – NEUST-MGT Registrar';
+                $body = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",<br><br>";
+                $body .= "Your request for <strong>" . $request['documentName'] . "</strong> (" . $documentDesc . ") (Request CODE: <strong>" . $requestCode . "</strong>) status has been updated to: <strong>" . ucfirst($newStatus) . "</strong>.<br><br>";
+                if ($remarks) {
+                    $body .= "<strong>Remarks:</strong> " . $remarks . "<br><br>";
+                }
+                $body .= "Thank you for your patience.<br><br>";
+                $body .= "Best regards,<br>NEUST-MGT Registrar Admin";
+                
+                $altBody = "Dear " . $request['firstname'] . " " . $request['lastname'] . ",\n\n";
+                $altBody .= "Your request for " . $request['documentName'] . " (" . $documentDesc . ") (Request CODE: " . $requestCode . ") status has been updated to: " . ucfirst($newStatus) . ".\n\n";
+                if ($remarks) {
+                    $altBody .= "Remarks: " . $remarks . "\n\n";
+                }
+                $altBody .= "Thank you for your patience.\n\n";
+                $altBody .= "Best regards,\nNEUST-MGT Registrar Admin";
+                break;
+        }
 
         $mail = new PHPMailer(true);
         try {
@@ -104,13 +218,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
 
-            $mail->setFrom('emailtestingsendeer@gmail.com', 'NEUST Registrar');
+            $mail->setFrom('emailtestingsendeer@gmail.com', 'NEUST-MGT Registrar');
             $mail->addAddress($email);
 
             $mail->isHTML(true);
-            $mail->Subject = 'Update on Your Document Request';
-            $mail->Body    = "Dear Student,<br>Your request <b>$requestCode</b> status is now: <b>$requestStatus</b>.<br>Remarks: $remarks<br>Thank you!";
-            $mail->AltBody = "Dear Student,\nYour request $requestCode status is now: $requestStatus.\nRemarks: $remarks\nThank you!";
+            $mail->Subject = $subject;
+            $mail->Body    = $body;
+            $mail->AltBody = $altBody;
 
             $mail->send();
         } catch (Exception $e) {
@@ -139,18 +253,176 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
+         :root {
             --neust-blue: #0056b3;
             --neust-yellow: #FFD700;
+            --sidebar-width: 280px;
         }
+        
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--neust-blue), #003366);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .sidebar-brand {
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        .sidebar-brand h4 {
+            font-weight: 600;
+            margin-bottom: 0;
+            font-size: 1.1rem;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.75rem 1.5rem;
+            margin: 0.25rem 0;
+            border-radius: 0;
+            transition: all 0.3s;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .topbar {
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background-color: var(--neust-blue);
+            color: white;
+            border-bottom: none;
+            padding: 15px;
+            font-weight: 500;
+        }
+        
+        .table tbody tr {
+            transition: all 0.2s;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(0, 86, 179, 0.05);
+        }
+        
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0 3px;
+        }
+        
+        .page-title {
+            color: var(--neust-blue);
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .badge {
+            padding: 0.5em 0.75em;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
         }
         .card {
             border: none;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-left:150px;
         }
         .card-header {
             background: linear-gradient(135deg, var(--neust-blue), #007bff);
@@ -211,9 +483,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header text-center position-relative">
-                    <a href="manage_request.php" class="btn btn-light back-btn">
-                        <i class="bi bi-arrow-left"></i>
-                    </a>
+                    
                     <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Update Request Status</h4>
                 </div>
                 <div class="card-body p-4">
@@ -296,6 +566,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 <script>
     function handleStatusChange() {
         const statusSelect = document.getElementById('requestStatus');
@@ -331,6 +602,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     document.getElementById('requestStatus').addEventListener('change', handleStatusChange);
     document.addEventListener('DOMContentLoaded', function() {
         handleStatusChange();
+    });
+
+    // Pusher Configuration for Real-time Notifications
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('ed1a40e7a469cee7f86c', {
+        cluster: 'ap1'
+    });
+
+    var channel = pusher.subscribe('admin-channel');
+    channel.bind('status-update', function(data) {
+        // Show notification for status update
+        if (data.type === 'status_update') {
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 400px;';
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill me-2" style="font-size: 1.2rem;"></i>
+                    <div class="flex-grow-1">
+                        <strong>Status Updated</strong><br>
+                        <small>${data.message}</small><br>
+                        <small class="text-muted">Student: ${data.studentName}</small><br>
+                        <small class="text-muted">Document: ${data.documentName}</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto remove after 6 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 6000);
+        }
     });
 </script>
 </body>

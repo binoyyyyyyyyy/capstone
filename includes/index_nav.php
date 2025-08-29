@@ -14,10 +14,10 @@
                         <a class="nav-link active" href="../admin/index.php"><i class="fas fa-home me-1"></i> Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-info-circle me-1"></i> About</a>
+                        <a class="nav-link" href="https://neust.edu.ph/historical-background/"><i class="fas fa-info-circle me-1"></i> About</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-envelope me-1"></i> Contact</a>
+                        <a class="nav-link" href="https://neust.edu.ph/"><i class="fas fa-envelope me-1"></i> Contact</a>
                     </li>
                     
                 </ul>

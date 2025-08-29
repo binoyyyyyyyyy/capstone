@@ -238,6 +238,9 @@ $result = $conn->query($sql);
                 margin-left: 0;
             }
         }
+        .button{
+            color:red;
+        }
     </style>
 </head>
 <body>
@@ -265,7 +268,9 @@ $result = $conn->query($sql);
                 </a>
             </div>
         </div>
-
+<div class="col-md-1 mt-2">
+    <button class="btn btn-secondary w-90" style="margin-left:1130px; background-color:red;" onclick="resetFilters()">Reset</button>
+</div>
 
         <div class="mb-4 row g-2 align-items-end">
     <div class="col-md-3">
@@ -308,9 +313,7 @@ $result = $conn->query($sql);
     </div>
 </div>
 
-<div class="col-md-2 mt-2">
-    <button class="btn btn-secondary w-100" onclick="resetFilters()">Reset</button>
-</div>
+
 
 
 

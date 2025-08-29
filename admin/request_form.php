@@ -3,6 +3,7 @@ session_start();
 date_default_timezone_set('Asia/Manila');
 require_once '../config/config.php';
 require '../vendor/autoload.php';
+require_once '../config/pusher_config.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -204,6 +205,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $requestID = $conn->insert_id;
             $generatedRequestCodes[] = $requestCode;
 
+            // Send Pusher notification for new request
+            $notificationData = array(
+                'type' => 'new_request',
+                'requestCode' => $requestCode,
+                'studentName' => $firstName . ' ' . $lastName,
+                'documentName' => $documentDetails[$documentID]['documentName'],
+                'message' => "New document request submitted: $requestCode"
+            );
+            sendPusherNotification('admin-channel', 'new-request', $notificationData);
+
             // Insert into supportingimage table for authorization image if uploaded
             if (!empty($authorizationImage)) {
                 $supNo = uniqid('SUP-');
@@ -222,11 +233,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insertImage->close();
             }
 
-            // Fetch email, request code, and status from the database
-            $stmt2 = $conn->prepare("SELECT email, requestCode, requestStatus FROM RequestTable WHERE requestID = ?");
-            $stmt2->bind_param("i", $requestID);
+            // Fetch document description
+            $stmt2 = $conn->prepare("SELECT documentDesc FROM DocumentsType WHERE documentID = ?");
+            $stmt2->bind_param("i", $documentID);
             $stmt2->execute();
-            $stmt2->bind_result($email, $requestCode, $requestStatus);
+            $stmt2->bind_result($documentDesc);
             $stmt2->fetch();
             $stmt2->close();
 
@@ -240,13 +251,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
-                $mail->setFrom('emailtestingsendeer@gmail.com', 'NEUST Registrar');
+                $mail->setFrom('emailtestingsendeer@gmail.com', 'NEUST-MGT Registrar');
                 $mail->addAddress($email, $firstName . ' ' . $lastName);
 
                 $mail->isHTML(true);
-                $mail->Subject = 'Document Request Submitted';
-                $mail->Body    = "Dear $firstName $lastName,<br>Your document request has been submitted.<br>Your request code: <b>$requestCode</b>.<br>Thank you!";
-                $mail->AltBody = "Dear $firstName $lastName,\\nYour document request has been submitted.\\nYour request code: $requestCode.\\nThank you!";
+                $mail->Subject = 'Document Request Received – NEUST-MGT Registrar';
+                $mail->Body    = "Dear $firstName $lastName,<br><br>";
+                $mail->Body   .= "We have successfully received your request for <strong>" . $documentDetails[$documentID]['documentName'] . "</strong> (" . $documentDesc . ") (Request CODE: <strong>$requestCode</strong>).<br>";
+                $mail->Body   .= "Our team will review and process it shortly. You may track your request status through the portal.<br><br>";
+                $mail->Body   .= "Thank you for your patience.<br><br>";
+                $mail->Body   .= "Best regards,<br>NEUST-MGT Registrar Admin";
+                
+                $mail->AltBody = "Dear $firstName $lastName,\n\n";
+                $mail->AltBody .= "We have successfully received your request for " . $documentDetails[$documentID]['documentName'] . " (" . $documentDesc . ") (Request CODE: $requestCode).\n";
+                $mail->AltBody .= "Our team will review and process it shortly. You may track your request status through the portal.\n\n";
+                $mail->AltBody .= "Thank you for your patience.\n\n";
+                $mail->AltBody .= "Best regards,\nNEUST-MGT Registrar Admin";
 
                 $mail->send();
             } catch (Exception $e) {
@@ -282,6 +302,12 @@ include '../includes/index_nav.php';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+     <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --neust-blue: #0056b3;
@@ -432,7 +458,7 @@ include '../includes/index_nav.php';
         }
         
         .nav-link:hover, .nav-link:focus {
-            color: white !important;
+            color:  #ffc107 !important;
             transform: translateY(-2px);
         }
         
@@ -493,7 +519,7 @@ include '../includes/index_nav.php';
         }
         
         .btn-primary:hover {
-            background-color: #002244;
+            background-color: #ffc107;
             border-color: #002244;
         }
         
@@ -770,6 +796,7 @@ include '../includes/index_nav.php';
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script>
         // Update processing time display and check for TOR selection
         function updateProcessingTime() {
@@ -950,6 +977,37 @@ include '../includes/index_nav.php';
             
             const modal = new bootstrap.Modal(document.getElementById('requestCodeModal'));
             modal.show();
+        });
+
+        // Pusher Configuration for Real-time Notifications
+        // Enable pusher logging - don't include this in production
+        Pusher.logToConsole = true;
+
+        var pusher = new Pusher('ed1a40e7a469cee7f86c', {
+            cluster: 'ap1'
+        });
+
+        var channel = pusher.subscribe('admin-channel');
+        channel.bind('new-request', function(data) {
+            // Show notification for new request
+            if (data.type === 'new_request') {
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
+                notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                notification.innerHTML = `
+                    <i class="bi bi-bell-fill me-2"></i>
+                    <strong>New Request:</strong> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
         });
     </script>
     <?php unset($_SESSION['generatedCodes']); endif; ?>

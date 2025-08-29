@@ -327,6 +327,7 @@ $role = $_SESSION['role_type']; // Get user role
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     
     <script>
         $(document).ready(function () {
@@ -604,6 +605,82 @@ $('#deleteForm').on('submit', function(e) {
                 default: return "secondary";
             }
         }
+
+        // Pusher Configuration for Real-time Notifications
+        // Enable pusher logging - don't include this in production
+        Pusher.logToConsole = true;
+
+        var pusher = new Pusher('ed1a40e7a469cee7f86c', {
+            cluster: 'ap1'
+        });
+
+        var channel = pusher.subscribe('admin-channel');
+        
+        // Listen for new requests
+        channel.bind('new-request', function(data) {
+            if (data.type === 'new_request') {
+                // Show notification
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
+                notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 400px;';
+                notification.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-bell-fill me-2" style="font-size: 1.2rem;"></i>
+                        <div class="flex-grow-1">
+                            <strong>New Document Request</strong><br>
+                            <small>${data.message}</small><br>
+                            <small class="text-muted">Student: ${data.studentName}</small><br>
+                            <small class="text-muted">Document: ${data.documentName}</small>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto remove after 8 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 8000);
+                
+                // Refresh the requests table
+                fetchRequests();
+            }
+        });
+
+        // Listen for status updates
+        channel.bind('status-update', function(data) {
+            if (data.type === 'status_update') {
+                // Show notification
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 400px;';
+                notification.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-2" style="font-size: 1.2rem;"></i>
+                        <div class="flex-grow-1">
+                            <strong>Status Updated</strong><br>
+                            <small>${data.message}</small><br>
+                            <small class="text-muted">Student: ${data.studentName}</small><br>
+                            <small class="text-muted">Document: ${data.documentName}</small>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto remove after 6 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 6000);
+                
+                // Refresh the requests table
+                fetchRequests();
+            }
+        });
     </script>
 </body>
 </html>

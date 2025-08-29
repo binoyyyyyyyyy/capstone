@@ -8,6 +8,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role_type'] !== 'admin') {
     exit();
 }
 
+// Check if user status is pending - redirect to pending dashboard
+if (isset($_SESSION['user_status']) && $_SESSION['user_status'] === 'pending') {
+    header("Location: pending_user_dashboard.php");
+    exit();
+}
+
 $role = $_SESSION['role_type'];
 $addedBy = isset($_SESSION['first_name']) && isset($_SESSION['last_name'])  
     ? $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] 

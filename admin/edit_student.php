@@ -1,10 +1,17 @@
 <?php
 session_start();
 require_once '../config/config.php';
+include '../includes/sidevar.php';
 
 // Check if admin is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
+    exit();
+}
+
+// Check if user status is pending - redirect to pending dashboard
+if (isset($_SESSION['user_status']) && $_SESSION['user_status'] === 'pending') {
+    header("Location: pending_user_dashboard.php");
     exit();
 }
 
@@ -81,16 +88,184 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+         :root {
+            --neust-blue: #0056b3;
+            --neust-yellow: #FFD700;
+            --sidebar-width: 280px;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--neust-blue), #003366);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .sidebar-brand {
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        .sidebar-brand h4 {
+            font-weight: 600;
+            margin-bottom: 0;
+            font-size: 1.1rem;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.75rem 1.5rem;
+            margin: 0.25rem 0;
+            border-radius: 0;
+            transition: all 0.3s;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .topbar {
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background-color: var(--neust-blue);
+            color: white;
+            border-bottom: none;
+            padding: 15px;
+            font-weight: 500;
+        }
+        
+        .table tbody tr {
+            transition: all 0.2s;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(0, 86, 179, 0.05);
+        }
+        
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0 3px;
+        }
+        
+        .page-title {
+            color: var(--neust-blue);
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .badge {
+            padding: 0.5em 0.75em;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
         .form-container {
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: none;
+            overflow: hidden;
+            margin-left:150px;
         }
         .form-header {
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            padding: 1.5rem;
+            color: white;
+            text-align: center;
         }
         .form-label {
             font-weight: 600;
@@ -98,23 +273,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-bottom: 8px;
         }
         .form-control, .form-select {
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: 1px solid #ced4da;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
             transition: all 0.3s;
         }
         .form-control:focus, .form-select:focus {
             border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
         }
         .btn-submit {
+            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            border: none;
             padding: 10px 25px;
-            border-radius: 6px;
+            border-radius: 8px;
             font-weight: 600;
             transition: all 0.3s;
         }
         .btn-submit:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(58, 123, 213, 0.3);
         }
         .back-btn {
             transition: all 0.3s;
@@ -128,19 +306,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </style>
 </head>
 <body class="bg-light">
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="form-container">
+    <div class="main-content">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="form-container">
                     <div class="form-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h2 class="mb-0">
-                                <i class="bi bi-person-gear me-2 text-primary"></i>Edit Student
-                            </h2>
-                            <a href="manage_students.php" class="btn btn-outline-secondary back-btn">
-                                <i class="bi bi-arrow-left me-1"></i> Back to Students
-                            </a>
-                        </div>
+                        <h3 class="mb-0">
+                            <i class="bi bi-person-gear me-2"></i>Edit Student
+                        </h3>
                     </div>
 
                     <!-- Display Messages -->
@@ -157,9 +331,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                     <?php endif; ?>
 
-                    <form action="" method="POST">
-                        <div class="row g-3">
-                            <div class="col-md-6">
+                                            <form action="" method="POST">
+                            <div class="row g-3">
+                                <div class="col-12 mb-3">
+                                    <a href="manage_students.php" class="btn btn-outline-secondary back-btn">
+                                        <i class="bi bi-arrow-left me-1"></i> Back to Students
+                                    </a>
+                                </div>
+                                
+                                <div class="col-md-6">
                                 <label class="form-label">Student Number</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light">
@@ -298,10 +478,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             </div>
 
                             <div class="col-12 mt-4">
-                                <div class="d-flex justify-content-between">
-                                    <a href="manage_students.php" class="btn btn-outline-secondary">
-                                        <i class="bi bi-x-circle me-1"></i> Cancel
-                                    </a>
+                                <div class="d-flex justify-content-end">
                                     <button type="submit" class="btn btn-primary btn-submit">
                                         <i class="bi bi-save me-1"></i> Update Student
                                     </button>
@@ -312,6 +489,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

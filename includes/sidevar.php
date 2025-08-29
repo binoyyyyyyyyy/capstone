@@ -13,7 +13,7 @@ $role = isset($_SESSION['role_type']) ? $_SESSION['role_type'] : '';  // Get use
         </div>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link active" href="dashboard.php">
+                <a class="nav-link" href="dashboard.php">
                     <i class="bi bi-speedometer2"></i>
                     Dashboard
                 </a>
