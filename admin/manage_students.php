@@ -14,7 +14,7 @@ $addedBy = isset($_SESSION['first_name']) && isset($_SESSION['last_name'])
     : 'Unknown';
     
 $sql = "SELECT s.*, c.courseName, m.majorName 
-        FROM studentInformation s 
+        FROM StudentInformation s 
         JOIN coursetable c ON s.course_ID = c.courseID 
         JOIN majortable m ON s.majorID = m.majorID 
         ORDER BY s.dateCreated DESC";
