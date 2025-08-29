@@ -30,7 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $datePickUp = $_POST['datePickUp'];
     $nameOfReceiver = $_POST['nameOfReceiver'];
     $relationship = isset($_POST['relationship']) ? $_POST['relationship'] : '';
-    $userID = $_SESSION['user_id'];
+    // Get userID from session if admin/staff is logged in, otherwise set to NULL
+    // userID tracks which admin/staff member processed the request (optional field)
+    // NOTE: Database must be updated to allow NULL values for userID column
+    // Run the SQL script: config/fix_userid_null.sql
+    $userID = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']) ? $_SESSION['user_id'] : NULL;
     $documentsToProcess = $_POST['documentID'];
     $fullName = $firstName . ' ' . $lastName;
     $immediateFamily = ['Father', 'Mother', 'Brother', 'Sister', 'Spouse', 'Child'];
@@ -198,12 +202,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Generate request code
         $requestCode = $requestCodePrefix . '-' . $documentID;
 
-        // Insert into RequestTable
-        $stmt = $conn->prepare("INSERT INTO RequestTable 
-            (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, dateCreated, relationship, email) 
-            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), ?, ?)");
-        $stmt->bind_param("siiissssss", $requestCode, $documentID, $userID, $studentID, 
-            $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $relationship, $email);
+        // Insert into RequestTable with conditional userID handling
+        if ($userID === NULL) {
+            // If no admin is logged in, insert without userID
+            $stmt = $conn->prepare("INSERT INTO RequestTable 
+                (requestCode, documentID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, dateCreated, relationship, email) 
+                VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), ?, ?)");
+            $stmt->bind_param("siissssss", $requestCode, $documentID, $studentID, 
+                $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $relationship, $email);
+        } else {
+            // If admin is logged in, include userID
+            $stmt = $conn->prepare("INSERT INTO RequestTable 
+                (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, dateCreated, relationship, email) 
+                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), ?, ?)");
+            $stmt->bind_param("siiissssss", $requestCode, $documentID, $userID, $studentID, 
+                $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $relationship, $email);
+        }
         
         if ($stmt->execute()) {
             $successCount++;

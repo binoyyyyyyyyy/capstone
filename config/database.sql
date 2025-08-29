@@ -85,7 +85,7 @@ MODIFY COLUMN `yearLevel` ENUM('1st Year', '2nd Year', '3rd Year', '4th Year', '
     `requestID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `requestCode` VARCHAR(80) NOT NULL UNIQUE,
     `documentID` INT UNSIGNED NOT NULL,
-    `userID` INT UNSIGNED NOT NULL,
+    `userID` INT UNSIGNED NULL COMMENT 'Admin/Staff ID who processed the request. NULL if no admin was logged in during submission.',
     `studentID` INT UNSIGNED NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `relationship` VARCHAR(255) NOT NULL,
