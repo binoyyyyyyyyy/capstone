@@ -18,7 +18,7 @@ if ($requestCode) {
         r.datePickUp, r.nameOfReceiver, r.remarks, 
         si.image, si.additionalimage, r.sVerify, u.email as processed_by
         FROM RequestTable r
-        JOIN studentInformation s ON r.studentID = s.studentID
+        JOIN StudentInformation s ON r.studentID = s.studentID
         JOIN DocumentsType d ON r.documentID = d.documentID
         LEFT JOIN supportingimage si ON r.requestID = si.requestID
         LEFT JOIN UserTable u ON r.userID = u.userID
