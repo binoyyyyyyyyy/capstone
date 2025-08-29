@@ -62,6 +62,11 @@
     CONSTRAINT `fk_student_major` FOREIGN KEY (`majorID`) REFERENCES `majortable` (`majorID`) ON DELETE RESTRICT ON UPDATE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+
+    ALTER TABLE `StudentInformation`
+MODIFY COLUMN `yearLevel` ENUM('1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'Alumni') NOT NULL;
+
     -- Document Types
     CREATE TABLE `DocumentsType` (
     `documentID` INT UNSIGNED NOT NULL AUTO_INCREMENT,

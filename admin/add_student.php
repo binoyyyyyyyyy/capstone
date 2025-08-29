@@ -9,6 +9,11 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Get currently logged-in user's full name
+$loggedInUser = isset($_SESSION['first_name'], $_SESSION['last_name']) 
+    ? $_SESSION['first_name'] . ' ' . $_SESSION['last_name']
+    : 'Unknown User';
+
 // Check if user status is pending - redirect to pending dashboard
 if (isset($_SESSION['user_status']) && $_SESSION['user_status'] === 'pending') {
     header("Location: pending_user_dashboard.php");
@@ -17,7 +22,7 @@ if (isset($_SESSION['user_status']) && $_SESSION['user_status'] === 'pending') {
 
 // Fetch courses and majors
 $courses = $conn->query("SELECT courseID, courseName FROM coursetable ORDER BY courseName ASC");
-$majors = $conn->query("SELECT majorID, majorName FROM majortable ORDER BY majorName ASC");
+// Majors will be fetched dynamically by course via AJAX
 
 // Define status and year options
 $statusOptions = ['Regular', 'Irregular', 'Transferee', 'Returnee', 'Graduated'];
@@ -63,6 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                 $studentStatus = trim($row[7] ?? '');
                 $yearLevel = trim($row[8] ?? '');
                 $contactNo = trim($row[9] ?? '');
+                // Added By column (ignored in favor of session user)
+                $addedByFromFile = trim($row[10] ?? '');
                 
                 // Validate required fields
                 if (empty($studentNo) || empty($firstname) || empty($lastname)) {
@@ -111,11 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                 $majorID = $majorResult->fetch_assoc()['majorID'];
                 $majorStmt->close();
                 
-                // Insert student
+                // Insert student (added_By is set from logged-in user)
                 $insertStmt = $conn->prepare("INSERT INTO StudentInformation 
-                    (studentNo, birthDate, firstname, lastname, middlename, course_ID, majorID, studentStatus, yearLevel, contactNo, dateCreated) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-                $insertStmt->bind_param("sssssiisss", $studentNo, $birthDate, $firstname, $lastname, $middlename, $courseID, $majorID, $studentStatus, $yearLevel, $contactNo);
+                    (studentNo, birthDate, firstname, lastname, middlename, course_ID, majorID, studentStatus, yearLevel, contactNo, added_By, dateCreated) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                $insertStmt->bind_param("sssssiissss", $studentNo, $birthDate, $firstname, $lastname, $middlename, $courseID, $majorID, $studentStatus, $yearLevel, $contactNo, $loggedInUser);
                 
                 if ($insertStmt->execute()) {
                     $successCount++;
@@ -698,61 +705,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
             excelFile.files = files;
         }
 
-        // Course-Major mapping
-        const courseMajorMapping = {
-            'BEED': [
-                { id: 'GE', name: 'General Education' },
-                { id: 'ECE', name: 'Early Childhood Education' }
-            ],
-            'BSBA': [
-                { id: 'MM', name: 'Marketing Management' },
-                { id: 'FM', name: 'Financial Management' }
-            ],
-            'BSIT': [
-                { id: 'DATABASE', name: 'DATABASE' },
-                { id: 'WEB', name: 'WEB SYSTEM TECHNOLOGY' }
-            ]
-        };
+        // Inject current user for template default
+        const addedByDefault = "<?php echo htmlspecialchars($loggedInUser); ?>";
 
-        // Function to populate majors based on selected course
-        function populateMajors() {
+        // Populate majors by selected course via API
+        async function populateMajorsByCourse() {
             const courseSelect = document.querySelector('select[name="course_ID"]');
             const majorSelect = document.getElementById('majorSelect');
-            
-            // Clear current options
+            const courseId = courseSelect.value;
+
             majorSelect.innerHTML = '<option value="">Select Major</option>';
-            
-            const selectedCourse = courseSelect.options[courseSelect.selectedIndex].text;
-            
-            if (courseMajorMapping[selectedCourse]) {
-                courseMajorMapping[selectedCourse].forEach(major => {
-                    const option = document.createElement('option');
-                    option.value = major.id;
-                    option.textContent = major.name;
-                    majorSelect.appendChild(option);
-                });
-                majorSelect.disabled = false;
-            } else {
-                majorSelect.disabled = true;
+            majorSelect.disabled = true;
+
+            if (!courseId) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`../api/majors_api.php?course_ID=${encodeURIComponent(courseId)}`);
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    data.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.majorID;
+                        opt.textContent = m.majorName;
+                        majorSelect.appendChild(opt);
+                    });
+                    majorSelect.disabled = false;
+                }
+            } catch (e) {
+                console.error('Failed to load majors', e);
             }
         }
 
-        // Add event listener to course select
         document.addEventListener('DOMContentLoaded', function() {
             const courseSelect = document.querySelector('select[name="course_ID"]');
             if (courseSelect) {
-                courseSelect.addEventListener('change', populateMajors);
+                courseSelect.addEventListener('change', populateMajorsByCourse);
             }
         });
 
         // Download template function
         function downloadTemplate() {
             const templateData = [
-                ['Student Number', 'Birth Date', 'First Name', 'Last Name', 'Middle Name', 'Course', 'Major', 'Student Status', 'Year Level', 'Contact Number'],
-                ['2021-0001', '2000-01-15', 'John', 'Doe', 'Smith', 'BSIT', 'Web System Technology', 'Regular', '1st Year', '09123456789'],
-                ['2021-0002', '2000-05-20', 'Jane', 'Smith', 'Johnson', 'BSIT', 'DATABASE', 'Regular', '1st Year', '09123456790'],
-                ['2021-0003', '2000-03-10', 'Mike', 'Johnson', 'Brown', 'BEED', 'General Education', 'Regular', '1st Year', '09123456791'],
-                ['2021-0004', '2000-07-25', 'Sarah', 'Wilson', 'Davis', 'BSBA', 'Marketing Management', 'Regular', '1st Year', '09123456792']
+                ['Student Number', 'Birth Date', 'First Name', 'Last Name', 'Middle Name', 'Course', 'Major', 'Student Status', 'Year Level', 'Contact Number', 'Added By'],
+                ['2021-0001', '2000-01-15', 'John', 'Doe', 'Smith', 'BSIT', 'Web System Technology', 'Regular', '1st Year', '09123456789', addedByDefault],
+                ['2021-0002', '2000-05-20', 'Jane', 'Smith', 'Johnson', 'BSIT', 'DATABASE', 'Regular', '1st Year', '09123456790', addedByDefault],
+                ['2021-0003', '2000-03-10', 'Mike', 'Johnson', 'Brown', 'BEED', 'General Education', 'Regular', '1st Year', '09123456791', addedByDefault],
+                ['2021-0004', '2000-07-25', 'Sarah', 'Wilson', 'Davis', 'BSBA', 'Marketing Management', 'Regular', '1st Year', '09123456792', addedByDefault]
             ];
 
             let csvContent = "data:text/csv;charset=utf-8,";
