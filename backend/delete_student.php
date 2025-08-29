@@ -22,7 +22,7 @@ try {
     $userID = $_SESSION['user_id'];
 
     // Verify user's password
-    $stmt = $conn->prepare("SELECT password FROM userTable WHERE userID = ?");
+    $stmt = $conn->prepare("SELECT password FROM UserTable WHERE userID = ?");
     if (!$stmt) {
         throw new Exception("Database error: " . $conn->error);
     }

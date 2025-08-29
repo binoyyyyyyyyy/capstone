@@ -1,7 +1,7 @@
 <?php
 // Database Connection
 $host = 'localhost';
-$dbname = 'schedulingmanagementdb';
+$dbname = 'schedulingmanagement';
 $username = 'root';
 $password = ''; // Change if needed
 $conn = new mysqli($host, $username, $password, $dbname);

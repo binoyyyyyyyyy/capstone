@@ -749,10 +749,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
         function downloadTemplate() {
             const templateData = [
                 ['Student Number', 'Birth Date', 'First Name', 'Last Name', 'Middle Name', 'Course', 'Major', 'Student Status', 'Year Level', 'Contact Number'],
-                ['2021-0001', '2000-01-15', 'John', 'Doe', 'Smith', 'BSIT', 'WEB', 'Regular', '1st Year', '09123456789'],
+                ['2021-0001', '2000-01-15', 'John', 'Doe', 'Smith', 'BSIT', 'Web System Technology', 'Regular', '1st Year', '09123456789'],
                 ['2021-0002', '2000-05-20', 'Jane', 'Smith', 'Johnson', 'BSIT', 'DATABASE', 'Regular', '1st Year', '09123456790'],
-                ['2021-0003', '2000-03-10', 'Mike', 'Johnson', 'Brown', 'BEED', 'GE', 'Regular', '1st Year', '09123456791'],
-                ['2021-0004', '2000-07-25', 'Sarah', 'Wilson', 'Davis', 'BSBA', 'MM', 'Regular', '1st Year', '09123456792']
+                ['2021-0003', '2000-03-10', 'Mike', 'Johnson', 'Brown', 'BEED', 'General Education', 'Regular', '1st Year', '09123456791'],
+                ['2021-0004', '2000-07-25', 'Sarah', 'Wilson', 'Davis', 'BSBA', 'Marketing Management', 'Regular', '1st Year', '09123456792']
             ];
 
             let csvContent = "data:text/csv;charset=utf-8,";

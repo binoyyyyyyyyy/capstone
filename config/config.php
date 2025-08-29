@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Database Configuration
 $host = 'localhost';
-$dbname = 'schedulingmanagementdb';
+$dbname = 'schedulingmanagement';
 $username = 'root'; // Change if using a different DB user
 $password = ''; // Change if a password is set
 
