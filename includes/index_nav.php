@@ -1,8 +1,19 @@
+<?php
+// Function to get the correct asset path
+function getAssetPath($filename) {
+    // Check if we're in admin directory (going up one level)
+    if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
+        return '../assets/' . $filename;
+    }
+    // Otherwise we're in root directory
+    return 'assets/' . $filename;
+}
+?>
 <!-- Navigation -->
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <img src="../assets/neustlogo.png" alt="University Logo">
+                 <img src="<?php echo getAssetPath('neustlogo.png'); ?>" alt="NEUST Logo">
                 NEUST Request Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

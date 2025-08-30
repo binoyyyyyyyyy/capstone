@@ -28,6 +28,64 @@ $courses = $conn->query("SELECT courseID, courseName FROM coursetable ORDER BY c
 $statusOptions = ['Regular', 'Irregular', 'Transferee', 'Returnee', 'Graduated'];
 $yearOptions = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year','Alumni'];
 
+// Handle manual student addition
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['excelFile'])) {
+    // Validate required fields
+    $requiredFields = ['studentNo', 'birthDate', 'firstname', 'lastname', 'course_ID', 'majorID', 'studentStatus', 'yearLevel', 'contactNo'];
+    $missingFields = [];
+    
+    foreach ($requiredFields as $field) {
+        if (empty($_POST[$field])) {
+            $missingFields[] = ucfirst(str_replace('_', ' ', $field));
+        }
+    }
+    
+    if (!empty($missingFields)) {
+        $_SESSION['error'] = "Missing required fields: " . implode(', ', $missingFields);
+        header("Location: add_student.php");
+        exit();
+    }
+    
+    $studentNo = trim($_POST['studentNo']);
+    $birthDate = $_POST['birthDate'];
+    $firstname = trim($_POST['firstname']);
+    $lastname = trim($_POST['lastname']);
+    $middlename = trim($_POST['middlename'] ?? '');
+    $course_ID = $_POST['course_ID'];
+    $majorID = $_POST['majorID'];
+    $studentStatus = $_POST['studentStatus'];
+    $yearLevel = $_POST['yearLevel'];
+    $contactNo = trim($_POST['contactNo']);
+    
+    // Check if student already exists
+    $checkStmt = $conn->prepare("SELECT studentID FROM StudentInformation WHERE studentNo = ? AND dateDeleted IS NULL");
+    $checkStmt->bind_param("s", $studentNo);
+    $checkStmt->execute();
+    if ($checkStmt->get_result()->num_rows > 0) {
+        $_SESSION['error'] = "Student number $studentNo already exists";
+        header("Location: add_student.php");
+        exit();
+    }
+    $checkStmt->close();
+    
+    // Insert student
+    $insertStmt = $conn->prepare("INSERT INTO StudentInformation 
+        (studentNo, birthDate, firstname, lastname, middlename, course_ID, majorID, studentStatus, yearLevel, contactNo, added_By, dateCreated) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+    $insertStmt->bind_param("sssssiissss", $studentNo, $birthDate, $firstname, $lastname, $middlename, $course_ID, $majorID, $studentStatus, $yearLevel, $contactNo, $loggedInUser);
+    
+    if ($insertStmt->execute()) {
+        $_SESSION['message'] = "Student $firstname $lastname added successfully!";
+        header("Location: add_student.php");
+        exit();
+    } else {
+        $_SESSION['error'] = "Error adding student: " . $conn->error;
+        header("Location: add_student.php");
+        exit();
+    }
+    $insertStmt->close();
+}
+
 // Handle Excel file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
     require_once '../vendor/autoload.php';
@@ -348,80 +406,250 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
         }
         .form-container {
             background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             border: none;
             overflow: hidden;
-            margin-left:150px;
+            margin-left: 0;
+            margin-top: 20px;
         }
+        
         .form-header {
-            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
-            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--neust-blue), #007bff);
+            padding: 2rem 1.5rem;
             color: white;
             text-align: center;
-            border-radius: 10px 10px 0 0;
+            border-radius: 15px 15px 0 0;
         }
+        
+        .form-header h2 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 0;
+        }
+        
+        .form-content {
+            padding: 1.5rem;
+        }
+        
         .form-label {
             font-weight: 600;
-            color: #495057;
+            color: #2c3e50;
             margin-bottom: 8px;
+            font-size: 0.9rem;
         }
+        
+        .form-label.required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
         .form-control, .form-select {
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 6px;
-            border: 1px solid #ced4da;
-            transition: all 0.3s;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            height: auto;
         }
+        
         .form-control:focus, .form-select:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            border-color: var(--neust-blue);
+            box-shadow: 0 0 0 0.15rem rgba(0, 86, 179, 0.15);
+            transform: none;
         }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px solid #e9ecef;
+            border-right: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+        
+        .input-group:focus-within .input-group-text {
+            border-color: var(--neust-blue);
+            background: linear-gradient(135deg, #e3f2fd, #f0f8ff);
+        }
+        
         .btn-submit {
             padding: 10px 25px;
             border-radius: 6px;
             font-weight: 600;
-            transition: all 0.3s;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, var(--neust-blue), #007bff);
+            border: none;
         }
+        
         .btn-submit:hover {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 86, 179, 0.25);
         }
+        
         .back-btn {
-            transition: all 0.3s;
-        }
-        .back-btn:hover {
-            transform: translateX(-3px);
-        }
-        .alert {
+            transition: all 0.3s ease;
             border-radius: 6px;
-        }
-        .excel-upload {
-            border: 2px dashed #dee2e6;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            background-color: #f8f9fa;
-            transition: all 0.3s;
-        }
-        .excel-upload:hover {
-            border-color: #86b7fe;
-            background-color: #f0f8ff;
-        }
-        .excel-upload.dragover {
-            border-color: #0d6efd;
-            background-color: #e7f3ff;
-        }
-        .template-download {
-            color: #6c757d;
-            text-decoration: none;
+            padding: 8px 16px;
             font-size: 0.9rem;
         }
-        .template-download:hover {
-            color: #0d6efd;
+        
+        .back-btn:hover {
+            transform: translateX(-2px);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
         }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .excel-upload {
+            border: 3px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        
+        .excel-upload:hover {
+            border-color: var(--neust-blue);
+            background: linear-gradient(135deg, #f0f8ff, #ffffff);
+            transform: translateY(-1px);
+        }
+        
+        .excel-upload.dragover {
+            border-color: var(--neust-blue);
+            background: linear-gradient(135deg, #e7f3ff, #ffffff);
+            transform: scale(1.01);
+        }
+        
+        .excel-upload i {
+            color: #28a745;
+            margin-bottom: 0.75rem;
+            font-size: 2.5rem;
+        }
+        
+        .excel-upload h4 {
+            color: #2c3e50;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .template-download {
+            color: var(--neust-blue);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 16px;
+            background: rgba(0, 86, 179, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .template-download:hover {
+            color: white;
+            background: var(--neust-blue);
+            text-decoration: none;
+        }
+        
         .error-list {
             max-height: 200px;
             overflow-y: auto;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            background: #fff5f5;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid #e74c3c;
+        }
+        
+        .section-divider {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #dee2e6, transparent);
+            margin: 1.5rem 0;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-section h4 {
+            color: var(--neust-blue);
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+        
+        .form-section h4 i {
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .btn-group-custom {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-cancel {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: #6c757d;
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        .btn-cancel:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .form-header {
+                padding: 1.25rem 1rem;
+                border-radius: 10px 10px 0 0;
+            }
+            
+            .form-content {
+                padding: 1.25rem;
+            }
+            
+            .excel-upload {
+                padding: 1.25rem;
+            }
+            
+            .btn-group-custom {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .btn-group-custom .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -434,89 +662,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                     <div class="form-header">
                         <div class="d-flex justify-content-between align-items-center">
                             <h2 class="mb-0">
-                                <i class="bi bi-person-plus me-2 text-primary"></i>Add New Student
+                                <i class="bi bi-person-plus me-2"></i>Add New Student
                             </h2>
-                            <a href="manage_students.php" class="btn btn-outline-secondary back-btn">
+                            <a href="manage_students.php" class="btn btn-outline-light back-btn">
                                 <i class="bi bi-arrow-left me-1"></i> Back to Students
                             </a>
                         </div>
                     </div>
 
-                    <!-- Display Messages -->
-                    <?php if (isset($_SESSION['message'])): ?>
-                        <div class="alert alert-success d-flex align-items-center">
-                            <i class="bi bi-check-circle-fill me-2"></i>
-                            <div><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
-                        </div>
-                    <?php endif; ?>
-                    <?php if (isset($_SESSION['error'])): ?>
-                        <div class="alert alert-danger d-flex align-items-center">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <div><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
-                        </div>
-                    <?php endif; ?>
+                    <div class="form-content">
+                        <!-- Display Messages -->
+                        <?php if (isset($_SESSION['message'])): ?>
+                            <div class="alert alert-success d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <div><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></div>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (isset($_SESSION['error'])): ?>
+                            <div class="alert alert-danger d-flex align-items-center">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <div><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+                            </div>
+                        <?php endif; ?>
 
-                    <!-- Excel Import Section -->
-                    <div class="mb-4">
-                        <div class="excel-upload" id="excelUpload">
-                            <i class="bi bi-file-earmark-excel text-success" style="font-size: 3rem;"></i>
-                            <h4 class="mt-3 mb-3">Bulk Import Students</h4>
-                            <p class="text-muted mb-3">Upload an Excel file to import multiple students at once</p>
-                            
-                            <form action="add_student.php" method="POST" enctype="multipart/form-data" id="excelForm">
-                                <div class="mb-3">
-                                    <input type="file" class="form-control" name="excelFile" id="excelFile" accept=".xlsx,.xls,.csv" required>
-                                    <small class="text-muted">Supported formats: Excel (.xlsx, .xls) and CSV (.csv)</small>
+                        <!-- Excel Import Section -->
+                        <div class="form-section">
+                            <h4>
+                                <i class="bi bi-file-earmark-excel"></i>Bulk Import Students
+                            </h4>
+                            <div class="excel-upload" id="excelUpload">
+                                <i class="bi bi-file-earmark-excel" style="font-size: 3rem;"></i>
+                                <h4 class="mt-3 mb-3">Upload Excel File</h4>
+                                <p class="text-muted mb-3">Upload an Excel file to import multiple students at once</p>
+                                
+                                <form action="add_student.php" method="POST" enctype="multipart/form-data" id="excelForm">
+                                    <div class="mb-3">
+                                        <input type="file" class="form-control" name="excelFile" id="excelFile" accept=".xlsx,.xls,.csv" required>
+                                        <small class="text-muted">Supported formats: Excel (.xlsx, .xls) and CSV (.csv)</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-upload me-1"></i> Import Students
+                                    </button>
+                                </form>
+                                
+                                <div class="mt-3">
+                                    <a href="#" class="template-download" onclick="downloadTemplate()">
+                                        <i class="bi bi-download me-1"></i> Download Excel Template
+                                    </a>
                                 </div>
-                                <button type="submit" class="btn btn-success">
-                                    <i class="bi bi-upload me-1"></i> Import Students
-                                </button>
-                            </form>
-                            
-                            <div class="mt-3">
-                                <a href="#" class="template-download" onclick="downloadTemplate()">
-                                    <i class="bi bi-download me-1"></i> Download Excel Template
-                                </a>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Import Errors -->
-                    <?php if (isset($_SESSION['import_errors'])): ?>
-                        <div class="alert alert-warning">
-                            <h6><i class="bi bi-exclamation-triangle me-2"></i>Import Errors:</h6>
-                            <div class="error-list">
-                                <?php foreach ($_SESSION['import_errors'] as $error): ?>
-                                    <div class="text-danger">• <?php echo htmlspecialchars($error); ?></div>
-                                <?php endforeach; ?>
+                        <!-- Import Errors -->
+                        <?php if (isset($_SESSION['import_errors'])): ?>
+                            <div class="alert alert-warning">
+                                <h6><i class="bi bi-exclamation-triangle me-2"></i>Import Errors:</h6>
+                                <div class="error-list">
+                                    <?php foreach ($_SESSION['import_errors'] as $error): ?>
+                                        <div class="text-danger">• <?php echo htmlspecialchars($error); ?></div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
-                        </div>
-                        <?php unset($_SESSION['import_errors']); ?>
-                    <?php endif; ?>
+                            <?php unset($_SESSION['import_errors']); ?>
+                        <?php endif; ?>
 
-                    <hr class="my-4">
+                        <hr class="section-divider">
 
-                    <!-- Manual Entry Form -->
-                    <h4 class="mb-3">
-                        <i class="bi bi-pencil-square me-2 text-primary"></i>Manual Entry
-                    </h4>
+                        <!-- Manual Entry Form -->
+                        <div class="form-section">
+                            <h4>
+                                <i class="bi bi-pencil-square"></i>Manual Entry
+                            </h4>
 
-                    <form action="../backend/add_student.php" method="POST">
+                    <form action="add_student.php" method="POST" id="addStudentForm">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">Student Number</label>
+                                <label class="form-label required">Student Number</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-person-vcard"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="studentNo" required>
+                                    <input type="text" class="form-control" name="studentNo" required placeholder="Enter student number">
                                 </div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Birth Date</label>
+                                <label class="form-label required">Birth Date</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-calendar"></i>
                                     </span>
                                     <input type="date" class="form-control" name="birthDate" required>
@@ -524,39 +757,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">First Name</label>
+                                <label class="form-label required">First Name</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-person"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="firstname" required>
+                                    <input type="text" class="form-control" name="firstname" required placeholder="Enter first name">
                                 </div>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Last Name</label>
+                                <label class="form-label required">Last Name</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-person"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="lastname" required>
+                                    <input type="text" class="form-control" name="lastname" required placeholder="Enter last name">
                                 </div>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Middle Name</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-person"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="middlename">
+                                    <input type="text" class="form-control" name="middlename" placeholder="Enter middle name (optional)">
                                 </div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Course</label>
+                                <label class="form-label required">Course</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-book"></i>
                                     </span>
                                     <select class="form-select" name="course_ID" required>
@@ -571,9 +804,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Major</label>
+                                <label class="form-label required">Major</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-mortarboard"></i>
                                     </span>
                                     <select class="form-select" name="majorID" id="majorSelect" required disabled>
@@ -584,9 +817,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Student Status</label>
+                                <label class="form-label required">Student Status</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-info-circle"></i>
                                     </span>
                                     <select class="form-select" name="studentStatus" required>
@@ -601,9 +834,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Year Level</label>
+                                <label class="form-label required">Year Level</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-123"></i>
                                     </span>
                                     <select class="form-select" name="yearLevel" required>
@@ -618,31 +851,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                             </div>
 
                             <div class="col-md-12">
-                                <label class="form-label">Contact Number</label>
+                                <label class="form-label required">Contact Number</label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">
+                                    <span class="input-group-text">
                                         <i class="bi bi-telephone"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="contactNo" required>
+                                    <input type="text" class="form-control" name="contactNo" required placeholder="Enter contact number">
                                 </div>
                             </div>
 
-                            <div class="col-12 mt-4">
-                                <div class="d-flex justify-content-between">
-                                    <a href="manage_students.php" class="btn btn-outline-secondary">
+                            <div class="col-12">
+                                <div class="btn-group-custom">
+                                    <a href="manage_students.php" class="btn btn-cancel">
                                         <i class="bi bi-x-circle me-1"></i> Cancel
                                     </a>
-                                    <button type="submit" class="btn btn-primary btn-submit">
+                                    <button type="submit" class="btn btn-submit">
                                         <i class="bi bi-save me-1"></i> Add Student
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

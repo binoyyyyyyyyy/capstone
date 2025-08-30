@@ -169,6 +169,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$request) {
             top: 1.5rem;
             left: 1.5rem;
         }
+        
+        /* Form styling for smaller inputs and buttons */
+        .form-control {
+            padding: 6px 10px;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            max-width: 300px;
+            width: 100%;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .form-control:focus {
+            border-color: var(--neust-blue);
+            box-shadow: 0 0 0 0.15rem rgba(0, 86, 179, 0.15);
+        }
+        
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #495057;
+        }
+        
+        .btn-primary {
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.25);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .mb-3 {
+            margin-bottom: 1rem !important;
+        }
 
 
 
@@ -372,7 +418,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$request) {
                             </div>
                         <?php endif; ?>
 
-                        <button type="submit" class="btn btn-primary w-100">Submit</button>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
                     </form>
 
                     <?php if (!empty($error_message)): ?>

@@ -17,6 +17,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Base URL Configuration
+$base_url = '/capstone-main/';
+
 // Security Headers
 header("X-Frame-Options: DENY");
 header("X-XSS-Protection: 1; mode=block");
