@@ -24,7 +24,7 @@ if (!isset($_GET['id'])) {
 $studentID = $_GET['id'];
 
 // Fetch student details
-$stmt = $conn->prepare("SELECT * FROM studentInformation WHERE studentID = ?");
+$stmt = $conn->prepare("SELECT * FROM StudentInformation WHERE studentID = ?");
 $stmt->bind_param("i", $studentID);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $year = $_POST['yearLevel'];
     $editedBy = $_SESSION['user_id'];
 
-    $stmt = $conn->prepare("UPDATE studentInformation SET studentNo=?, firstname=?, lastname=?, middlename=?, birthDate=?, course_ID=?, majorID=?, contactNo=?, studentStatus=?, yearLevel=?, edited_By=? WHERE studentID=?");
+    $stmt = $conn->prepare("UPDATE StudentInformation SET studentNo=?, firstname=?, lastname=?, middlename=?, birthDate=?, course_ID=?, majorID=?, contactNo=?, studentStatus=?, yearLevel=?, edited_By=? WHERE studentID=?");
     $stmt->bind_param("sssssiissssi", $studentNo, $firstname, $lastname, $middlename, $birthDate, $course_ID, $majorID, $contactNo, $studentStatus, $year, $loggedInUser, $studentID);
     
     if ($stmt->execute()) {
@@ -251,6 +251,66 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
+            }
+            
+            .form-container {
+                margin-left: 0 !important;
+                width: calc(100% - 20px);
+                margin: 10px;
+            }
+            
+            .container {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .col-lg-8 {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .form-header {
+                padding: 1rem;
+                text-align: center;
+            }
+            
+            .form-header h3 {
+                font-size: 1.2rem;
+            }
+            
+            .form-body {
+                padding: 1rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between .btn {
+                width: 100%;
+            }
+            
+            .input-group-text {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .row.g-3 .col-md-6 {
+                margin-bottom: 1rem;
             }
         }
         .form-container {
@@ -259,7 +319,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             border: none;
             overflow: hidden;
-            margin-left:150px;
+            margin-left: 150px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container {
+                margin-left: 0 !important;
+                width: calc(100% - 20px);
+                margin: 10px;
+            }
         }
         .form-header {
             background: linear-gradient(135deg, #3a7bd5, #00d2ff);
@@ -305,8 +373,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     </style>
 </head>
-<body class="bg-light">
-    <div class="main-content">
+ <body class="bg-light">
+     <div class="main-content">
         <div class="container py-5">
             <div class="row justify-content-center">
                 <div class="col-lg-8">
@@ -492,28 +560,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Enable form validation
-        (function () {
-            'use strict'
-            
-            // Fetch all the forms we want to apply custom Bootstrap validation styles to
-            var forms = document.querySelectorAll('form')
-            
-            // Loop over them and prevent submission
-            Array.prototype.slice.call(forms)
-                .forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (!form.checkValidity()) {
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }
-                        
-                        form.classList.add('was-validated')
-                    }, false)
-                })
-        })()
-    </script>
+         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+     <script>
+         // Enable form validation
+         (function () {
+             'use strict'
+             
+             // Fetch all the forms we want to apply custom Bootstrap validation styles to
+             var forms = document.querySelectorAll('form')
+             
+             // Loop over them and prevent submission
+             Array.prototype.slice.call(forms)
+                 .forEach(function (form) {
+                     form.addEventListener('submit', function (event) {
+                         if (!form.checkValidity()) {
+                             event.preventDefault()
+                             event.stopPropagation()
+                         }
+                         
+                         form.classList.add('was-validated')
+                     }, false)
+                 })
+         })()
+
+     </script>
 </body>
 </html>

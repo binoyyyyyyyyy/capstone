@@ -22,7 +22,7 @@ $requestID = isset($_GET['id']) ? intval($_GET['id']) : null;
 $stmt = $conn->prepare("SELECT r.requestID, r.requestCode, r.dateRequest, r.requestStatus, 
     s.firstname, s.lastname, d.documentName, r.datePickUp, r.nameOfReceiver, r.remarks
     FROM RequestTable r
-    JOIN studentInformation s ON r.studentID = s.studentID
+    JOIN StudentInformation s ON r.studentID = s.studentID
     JOIN DocumentsType d ON r.documentID = d.documentID
     WHERE r.requestID = ?");
 $stmt->bind_param("i", $requestID);
@@ -242,13 +242,6 @@ function getStatusBadge($status) {
                 width: 100%;
                 height: auto;
                 position: relative;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                z-index: 1001;
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
             }
             
             .main-content {

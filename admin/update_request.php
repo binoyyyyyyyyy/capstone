@@ -1,5 +1,8 @@
 <?php
-session_start();
+// Check if session is already started (config.php already starts it)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once '../config/config.php';
 require '../vendor/autoload.php';
 require_once '../config/pusher_config.php';
@@ -28,7 +31,7 @@ $stmt = $conn->prepare("SELECT
     s.firstname, s.lastname, s.studentNo,
     d.documentName
     FROM RequestTable r
-    JOIN studentInformation s ON r.studentID = s.studentID
+    JOIN StudentInformation s ON r.studentID = s.studentID
     JOIN DocumentsType d ON r.documentID = d.documentID
     WHERE r.requestID = ?");
 $stmt->bind_param("i", $requestID);
@@ -412,43 +415,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 width: 100%;
                 height: auto;
                 position: relative;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                z-index: 1001;
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
             }
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
             }
             
             .container {
                 padding: 10px;
+                max-width: 100%;
             }
             
             .col-lg-8 {
                 padding: 0;
+                max-width: 100%;
             }
             
             .card {
-                margin-left: 0;
+                margin-left: 0 !important;
                 margin: 10px;
+                width: calc(100% - 20px);
             }
             
             .card-header {
                 padding: 1rem;
+                text-align: center;
+            }
+            
+            .card-header h4 {
+                font-size: 1.2rem;
             }
             
             .card-body {
-                padding: 1.5rem;
+                padding: 1rem;
             }
             
             .btn {
                 width: 100%;
                 margin-bottom: 10px;
+                padding: 12px;
+                font-size: 0.9rem;
             }
             
             .back-btn {
@@ -469,6 +476,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             .request-info {
                 padding: 1rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .status-badge {
+                font-size: 0.8rem;
+                padding: 4px 8px;
             }
         }
         
@@ -517,6 +534,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             margin-left: 150px;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                margin-left: 0 !important;
+                width: calc(100% - 20px);
+            }
         }
         .card-header {
             background: linear-gradient(135deg, var(--neust-blue), #007bff);
@@ -572,11 +596,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
-<!-- Mobile Menu Toggle Button -->
-<button class="btn btn-primary d-md-none position-fixed" id="mobileMenuToggle" style="top: 10px; left: 10px; z-index: 1002;">
-    <i class="bi bi-list"></i>
-</button>
-
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">

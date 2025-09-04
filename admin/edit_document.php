@@ -240,13 +240,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 width: 100%;
                 height: auto;
                 position: relative;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                z-index: 1001;
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
             }
             
             .main-content {
@@ -255,29 +248,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
             
             .document-card {
-                margin-left: 0;
+                margin-left: 0 !important;
                 margin: 10px;
+                width: calc(100% - 20px);
             }
             
             .container {
                 padding: 0;
+                max-width: 100%;
             }
             
             .col-lg-8 {
                 padding: 0;
+                max-width: 100%;
             }
             
             .card-header {
                 padding: 1rem;
+                text-align: center;
+            }
+            
+            .card-header h3 {
+                font-size: 1.2rem;
             }
             
             .card-body {
-                padding: 1.5rem;
+                padding: 1rem;
             }
             
             .btn {
                 width: 100%;
                 margin-bottom: 10px;
+                padding: 12px;
+                font-size: 0.9rem;
             }
             
             .d-flex.justify-content-between {
@@ -291,6 +294,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             .row.g-3 .col-md-6 {
                 margin-bottom: 1rem;
+            }
+            
+            .input-group-text {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .status-badge {
+                font-size: 0.8rem;
+                padding: 4px 8px;
             }
         }
         
@@ -342,7 +360,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             border: none;
             overflow: hidden;
-            margin-left:150px;
+            margin-left: 150px;
+        }
+        
+        @media (max-width: 768px) {
+            .document-card {
+                margin-left: 0 !important;
+            }
         }
         .card-header {
             background: linear-gradient(135deg, #3a7bd5, #00d2ff);
@@ -403,11 +427,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </style>
 </head>
 <body class="bg-light">
-    <!-- Mobile Menu Toggle Button -->
-    <button class="btn btn-primary d-md-none position-fixed" id="mobileMenuToggle" style="top: 10px; left: 10px; z-index: 1002;">
-        <i class="bi bi-list"></i>
-    </button>
-
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-8">
