@@ -3,6 +3,11 @@ session_start();
 require_once '../config/config.php'; // Database connection
 include '../includes/sidevar.php';
 
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
@@ -327,6 +332,66 @@ $role = $_SESSION['role_type']; // Get user role
             </div>
         </div>
 
+
+
+
+        <!-- Add this after the Dashboard Stats row, before the Request Status Chart -->
+<!-- Report Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Generate Report</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reportModal">
+                    <i class="bi bi-file-earmark-bar-graph"></i> Generate
+                </button>
+            </div>
+            <div class="card-body" id="reportResult" style="display:none;">
+                <!-- Report results will be shown here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="reportForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reportModalLabel">Generate Report</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="reportType" class="form-label">Report Type</label>
+            <select class="form-select" id="reportType" name="reportType" required>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div class="mb-3" id="datePickerContainer">
+            <label for="reportDate" class="form-label">Select Date</label>
+            <input type="date" class="form-control" id="reportDate" name="reportDate" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Generate</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
         <!-- Request Status Chart -->
         <div class="row mb-4">
             <div class="col-12">
@@ -570,6 +635,51 @@ if (data.recent && data.recent.length > 0) {
             fetchDashboardStats();
         }
     });
+
+// ...existing code...
+
+$('#reportType').on('change', function() {
+    const type = $(this).val();
+    if (type === 'monthly') {
+        $('#reportDate').attr('type', 'month');
+        $('#reportDate').val('');
+    } else if (type === 'weekly') {
+        $('#reportDate').attr('type', 'week');
+        $('#reportDate').val('');
+    } else {
+        $('#reportDate').attr('type', 'date');
+        $('#reportDate').val('');
+    }
+});
+
+// Set initial type on page load
+$(document).ready(function() {
+    $('#reportType').trigger('change');
+    // ...existing code...
+});
+
+// Handle report form submission
+$('#reportForm').on('submit', function(e) {
+    e.preventDefault();
+    const type = $('#reportType').val();
+    const date = $('#reportDate').val();
+
+    // Create a hidden form and submit to download the file
+    const form = $('<form>', {
+        method: 'POST',
+        action: '../api/dashboard_report_api.php',
+        target: '_blank'
+    }).append(
+        $('<input>', { type: 'hidden', name: 'type', value: type }),
+        $('<input>', { type: 'hidden', name: 'date', value: date })
+    );
+    $('body').append(form);
+    form.submit();
+    form.remove();
+
+    $('#reportModal').modal('hide');
+    $('#reportResult').hide().html('');
+});
 </script>
 </body>
 </html>
