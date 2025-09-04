@@ -412,6 +412,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 width: 100%;
                 height: auto;
                 position: relative;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1001;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
             }
             
             .main-content {
@@ -428,6 +435,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             .card {
                 margin-left: 0;
+                margin: 10px;
             }
             
             .card-header {
@@ -449,11 +457,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 top: auto;
                 margin-bottom: 1rem;
             }
+            
+            .d-grid.gap-2.d-md-flex.justify-content-md-end {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-grid.gap-2.d-md-flex.justify-content-md-end .btn {
+                width: 100%;
+            }
+            
+            .request-info {
+                padding: 1rem;
+            }
         }
         
         @media (max-width: 576px) {
             .container {
                 padding: 5px;
+            }
+            
+            .card {
+                margin: 5px;
             }
             
             .card-header {
@@ -466,6 +491,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             .request-info {
                 padding: 0.75rem;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .status-badge {
+                font-size: 0.8rem;
+                padding: 0.3em 0.6em;
+            }
+            
+            .request-info-label {
+                font-size: 0.9rem;
             }
         }
         
@@ -529,6 +572,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </style>
 </head>
 <body>
+<!-- Mobile Menu Toggle Button -->
+<button class="btn btn-primary d-md-none position-fixed" id="mobileMenuToggle" style="top: 10px; left: 10px; z-index: 1002;">
+    <i class="bi bi-list"></i>
+</button>
+
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -690,6 +738,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     notification.remove();
                 }
             }, 6000);
+        }
+    });
+
+    // Mobile menu toggle functionality
+    document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('show');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.getElementById('mobileMenuToggle');
+        
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(e.target) && 
+            !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('show');
         }
     });
 </script>

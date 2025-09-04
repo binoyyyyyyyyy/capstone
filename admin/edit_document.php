@@ -36,6 +36,40 @@ if (!$document) {
     header("Location: manage_documents.php");
     exit();
 }
+
+// Handle update request
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $documentCode = trim($_POST['documentCode']);
+    $documentName = trim($_POST['documentName']);
+    $documentDesc = trim($_POST['documentDesc']);
+    $documentStatus = trim($_POST['documentStatus']);
+    $procTime = trim($_POST['procTime']);
+
+    // Check if any changes were made
+    $hasChanges = false;
+    if ($document['documentCode'] !== $documentCode) $hasChanges = true;
+    if ($document['documentName'] !== $documentName) $hasChanges = true;
+    if ($document['documentDesc'] !== $documentDesc) $hasChanges = true;
+    if ($document['documentStatus'] !== $documentStatus) $hasChanges = true;
+    if ($document['procTime'] !== $procTime) $hasChanges = true;
+
+    if ($hasChanges) {
+        $stmt = $conn->prepare("UPDATE DocumentsType SET documentCode = ?, documentName = ?, documentDesc = ?, documentStatus = ?, procTime = ? WHERE documentID = ?");
+        $stmt->bind_param("sssssi", $documentCode, $documentName, $documentDesc, $documentStatus, $procTime, $documentID);
+
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Document updated successfully!";
+        } else {
+            $_SESSION['error'] = "Failed to update document.";
+        }
+        $stmt->close();
+    } else {
+        $_SESSION['message'] = "No changes were made to the document.";
+    }
+
+    header("Location: manage_documents.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -206,16 +240,101 @@ if (!$document) {
                 width: 100%;
                 height: auto;
                 position: relative;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1001;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
             }
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
             }
-        }
-        /* Mobile overrides */
-        @media (max-width: 768px) {
+            
             .document-card {
                 margin-left: 0;
+                margin: 10px;
+            }
+            
+            .container {
+                padding: 0;
+            }
+            
+            .col-lg-8 {
+                padding: 0;
+            }
+            
+            .card-header {
+                padding: 1rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between .btn {
+                width: 100%;
+            }
+            
+            .row.g-3 .col-md-6 {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 5px;
+            }
+            
+            .document-card {
+                margin: 5px;
+            }
+            
+            .card-header {
+                padding: 0.75rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .input-group-text {
+                padding: 0.5rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .row.g-3 {
+                margin: 0;
+            }
+            
+            .row.g-3 > * {
+                padding: 0;
+                margin-bottom: 1rem;
+            }
+            
+            textarea {
+                min-height: 100px;
             }
         }
         .document-card {
@@ -284,6 +403,11 @@ if (!$document) {
     </style>
 </head>
 <body class="bg-light">
+    <!-- Mobile Menu Toggle Button -->
+    <button class="btn btn-primary d-md-none position-fixed" id="mobileMenuToggle" style="top: 10px; left: 10px; z-index: 1002;">
+        <i class="bi bi-list"></i>
+    </button>
+
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-8">
@@ -305,7 +429,7 @@ if (!$document) {
                             </div>
                         <?php endif; ?>
 
-                        <form method="POST" action="../backend/edit_document.php?id=<?php echo $documentID; ?>">
+                        <form method="POST" action="">
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Document Code</label>
@@ -364,8 +488,11 @@ if (!$document) {
                                     </div>
                                 </div>
 
-                                <div class="col-150 mt-3">
+                                <div class="col-12 mt-4">
                                     <div class="d-flex justify-content-between">
+                                        <a href="manage_documents.php" class="btn btn-outline-secondary btn-back">
+                                            <i class="bi bi-arrow-left me-1"></i> Back to Documents
+                                        </a>
                                         <button type="submit" class="btn btn-primary btn-submit">
                                             <i class="bi bi-save me-1"></i> Update Document
                                         </button>
@@ -401,6 +528,24 @@ if (!$document) {
                 const firstInvalid = this.querySelector('.is-invalid');
                 firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 firstInvalid.focus();
+            }
+        });
+
+        // Mobile menu toggle functionality
+        document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('show');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const menuToggle = document.getElementById('mobileMenuToggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('show');
             }
         });
     </script>

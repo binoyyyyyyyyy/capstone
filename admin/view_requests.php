@@ -242,16 +242,104 @@ function getStatusBadge($status) {
                 width: 100%;
                 height: auto;
                 position: relative;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1001;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
             }
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
             }
-        }
-        /* Mobile overrides */
-        @media (max-width: 768px) {
+            
+            .container {
+                padding: 0;
+            }
+            
+            .col-lg-10 {
+                padding: 0;
+            }
+            
             .card .card-header {
                 text-align: center;
+                padding: 1rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between .btn {
+                width: 100%;
+            }
+            
+            .row .col-md-6 {
+                margin-bottom: 1rem;
+            }
+            
+            .img-preview {
+                max-height: 250px !important;
+            }
+            
+            .modal-dialog {
+                margin: 10px;
+            }
+            
+            .modal-dialog.modal-lg {
+                max-width: calc(100% - 20px);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 5px;
+            }
+            
+            .card-header {
+                padding: 0.75rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .detail-card {
+                margin-bottom: 1rem;
+            }
+            
+            .detail-label {
+                font-size: 0.9rem;
+            }
+            
+            .img-preview {
+                max-height: 200px !important;
+            }
+            
+            .modal-dialog {
+                margin: 5px;
+            }
+            
+            .modal-dialog.modal-lg {
+                max-width: calc(100% - 10px);
+            }
+            
+            .status-badge {
+                font-size: 0.8rem;
+                padding: 0.3em 0.6em;
             }
         }
         
@@ -267,6 +355,11 @@ function getStatusBadge($status) {
     </style>
 </head>
 <body class="bg-light">
+    <!-- Mobile Menu Toggle Button -->
+    <button class="btn btn-primary d-md-none position-fixed" id="mobileMenuToggle" style="top: 10px; left: 10px; z-index: 1002;">
+        <i class="bi bi-list"></i>
+    </button>
+
     <div class="main-content">
         <div class="container py-5">
         <div class="row justify-content-center">
@@ -420,6 +513,24 @@ function getStatusBadge($status) {
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Mobile menu toggle functionality
+        document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('show');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const menuToggle = document.getElementById('mobileMenuToggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('show');
+            }
         });
     </script>
 </body>

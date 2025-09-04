@@ -36,17 +36,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $role_type = $_POST['role_type'];
     $userStatus = $_POST['userStatus'];
 
-    // Update user details and set edited_by
-    $stmt = $conn->prepare("UPDATE UserTable SET firstName = ?, lastName = ?, email = ?, role_type = ?, userStatus = ?, edited_by = ? WHERE userID = ?");
-    $stmt->bind_param("ssssssi", $firstName, $lastName, $email, $role_type, $userStatus, $loggedInUser, $userID);
-    
-    if ($stmt->execute()) {
-        $_SESSION['message'] = "User updated successfully!";
+    // Check if any changes were made
+    $hasChanges = false;
+    if ($user['firstName'] !== $firstName) $hasChanges = true;
+    if ($user['lastName'] !== $lastName) $hasChanges = true;
+    if ($user['email'] !== $email) $hasChanges = true;
+    if ($user['role_type'] !== $role_type) $hasChanges = true;
+    if ($user['userStatus'] !== $userStatus) $hasChanges = true;
+
+    if ($hasChanges) {
+        // Update user details and set edited_by
+        $stmt = $conn->prepare("UPDATE UserTable SET firstName = ?, lastName = ?, email = ?, role_type = ?, userStatus = ?, edited_by = ? WHERE userID = ?");
+        $stmt->bind_param("ssssssi", $firstName, $lastName, $email, $role_type, $userStatus, $loggedInUser, $userID);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "User updated successfully!";
+        } else {
+            $_SESSION['error'] = "Failed to update user.";
+        }
+        
+        $stmt->close();
     } else {
-        $_SESSION['error'] = "Failed to update user.";
+        $_SESSION['message'] = "No changes were made to the user.";
     }
     
-    $stmt->close();
     header("Location: manage_users.php");
     exit();
 }
@@ -224,10 +237,84 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 width: 100%;
                 height: auto;
                 position: relative;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1001;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
             }
             
             .main-content {
                 margin-left: 0;
+                padding: 10px;
+            }
+            
+            .user-card {
+                margin-left: 0;
+                margin: 10px;
+            }
+            
+            .container {
+                padding: 0;
+            }
+            
+            .col-lg-8 {
+                padding: 0;
+            }
+            
+            .card-header {
+                padding: 1rem;
+            }
+            
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .d-flex.justify-content-between .btn {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 5px;
+            }
+            
+            .user-card {
+                margin: 5px;
+            }
+            
+            .card-header {
+                padding: 0.75rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .form-label {
+                font-size: 0.9rem;
+            }
+            
+            .input-group-text {
+                padding: 0.5rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 10px 12px;
+                font-size: 0.9rem;
             }
         }
         .user-card {
@@ -319,6 +406,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </style>
 </head>
 <body class="bg-light">
+    <!-- Mobile Menu Toggle Button -->
+    <button class="btn btn-primary d-md-none position-fixed" id="mobileMenuToggle" style="top: 10px; left: 10px; z-index: 1002;">
+        <i class="bi bi-list"></i>
+    </button>
+
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-8">
@@ -490,6 +582,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             const badge = this.previousElementSibling;
             badge.className = `status-badge role-${this.value} me-2`;
             badge.textContent = this.options[this.selectedIndex].text;
+        });
+
+        // Mobile menu toggle functionality
+        document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('show');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const menuToggle = document.getElementById('mobileMenuToggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !menuToggle.contains(e.target)) {
+                sidebar.classList.remove('show');
+            }
         });
     </script>
 </body>
