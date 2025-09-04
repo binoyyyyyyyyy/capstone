@@ -664,7 +664,92 @@ $('#reportForm').on('submit', function(e) {
     const type = $('#reportType').val();
     const date = $('#reportDate').val();
 
-    // Create a hidden form and submit to download the file
+    // Show loading state
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.html('<i class="bi bi-hourglass-split"></i> Generating...').prop('disabled', true);
+
+    // Try AJAX first for better error handling
+    $.ajax({
+        url: '../api/dashboard_report_api.php',
+        type: 'POST',
+        data: {
+            type: type,
+            date: date
+        },
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function(data, status, xhr) {
+            // Check if response is actually CSV
+            const contentType = xhr.getResponseHeader('Content-Type');
+            if (contentType && contentType.includes('text/csv')) {
+                // Create download link
+                const blob = new Blob([data], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `requests_report_${type}_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } else {
+                // Fallback to form submission
+                submitFormDirectly(type, date);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('AJAX failed, trying alternative method...');
+            // Try alternative API first, then direct form submission
+            tryAlternativeAPI(type, date);
+        },
+        complete: function() {
+            // Reset button state
+            submitBtn.html(originalText).prop('disabled', false);
+            $('#reportModal').modal('hide');
+            $('#reportResult').hide().html('');
+        }
+    });
+});
+
+// Try alternative API method
+function tryAlternativeAPI(type, date) {
+    $.ajax({
+        url: '../api/dashboard_report_api_alternative.php',
+        type: 'POST',
+        data: {
+            type: type,
+            date: date
+        },
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function(data, status, xhr) {
+            const contentType = xhr.getResponseHeader('Content-Type');
+            if (contentType && contentType.includes('text/csv')) {
+                const blob = new Blob([data], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `requests_report_${type}_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } else {
+                submitFormDirectly(type, date);
+            }
+        },
+        error: function() {
+            console.log('Alternative API failed, trying direct form submission...');
+            submitFormDirectly(type, date);
+        }
+    });
+}
+
+// Fallback function for direct form submission
+function submitFormDirectly(type, date) {
     const form = $('<form>', {
         method: 'POST',
         action: '../api/dashboard_report_api.php',
@@ -673,13 +758,11 @@ $('#reportForm').on('submit', function(e) {
         $('<input>', { type: 'hidden', name: 'type', value: type }),
         $('<input>', { type: 'hidden', name: 'date', value: date })
     );
+    
     $('body').append(form);
     form.submit();
     form.remove();
-
-    $('#reportModal').modal('hide');
-    $('#reportResult').hide().html('');
-});
+}
 </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 <?php
+// Alternative report generation method for Byethost compatibility
 // Enable error reporting for debugging (remove in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -77,21 +78,24 @@ if (!$stmt->execute()) {
 
 $result = $stmt->get_result();
 
-// Clear any previous output
-if (ob_get_level()) {
-    ob_end_clean();
+// Create temporary file
+$filename = "requests_report_{$type}_" . date('Ymd_His') . ".csv";
+$tempFile = sys_get_temp_dir() . '/' . $filename;
+
+// Try to create file in temp directory, fallback to current directory
+if (!is_writable(sys_get_temp_dir())) {
+    $tempFile = '../uploads/' . $filename;
+    if (!is_dir('../uploads/')) {
+        mkdir('../uploads/', 0755, true);
+    }
 }
 
-// Output CSV headers with Byethost compatibility
-$filename = "requests_report_{$type}_" . date('Ymd_His') . ".csv";
-header('Content-Type: text/csv; charset=utf-8');
-header("Content-Disposition: attachment; filename=\"$filename\"");
-header('Cache-Control: no-cache, must-revalidate');
-header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
-header('Pragma: no-cache');
-
-// Open output stream
-$output = fopen('php://output', 'w');
+$output = fopen($tempFile, 'w');
+if (!$output) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Could not create temporary file']);
+    exit;
+}
 
 // Write CSV header
 fputcsv($output, ['Request ID', 'Student Name', 'Document Type', 'Status', 'Date Requested']);
@@ -109,5 +113,23 @@ while ($row = $result->fetch_assoc()) {
 
 fclose($output);
 $stmt->close();
-exit;
 
+// Clear any previous output
+if (ob_get_level()) {
+    ob_end_clean();
+}
+
+// Output file with proper headers
+header('Content-Type: text/csv; charset=utf-8');
+header("Content-Disposition: attachment; filename=\"$filename\"");
+header('Cache-Control: no-cache, must-revalidate');
+header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+header('Pragma: no-cache');
+header('Content-Length: ' . filesize($tempFile));
+
+// Output file content
+readfile($tempFile);
+
+// Clean up temporary file
+unlink($tempFile);
+exit;

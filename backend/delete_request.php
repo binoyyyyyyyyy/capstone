@@ -1,5 +1,8 @@
 <?php
-session_start();
+// Check if session is already started (config.php already starts it)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 header('Content-Type: application/json'); // Add this line
@@ -22,7 +25,7 @@ try {
     $userID = $_SESSION['user_id'];
 
     // Verify user's password
-    $stmt = $conn->prepare("SELECT password FROM userTable WHERE userID = ?");
+    $stmt = $conn->prepare("SELECT password FROM UserTable WHERE userID = ?");
     if (!$stmt) {
         throw new Exception("Prepare failed: " . $conn->error);
     }

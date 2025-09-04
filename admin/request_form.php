@@ -73,7 +73,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $allowedTypes = array('jpg', 'jpeg', 'png', 'pdf');
 
     // Process authorization image (required if receiver isn't student OR TOR is selected)
-    if ($nameOfReceiver !== $fullName) {
+    // Use case-insensitive comparison to match JavaScript behavior
+    $receiverNormalized = strtolower(trim($nameOfReceiver));
+    $fullNameNormalized = strtolower(trim($fullName));
+    
+    // Debug logging (remove in production)
+    error_log("DEBUG - Receiver: '$nameOfReceiver' -> '$receiverNormalized'");
+    error_log("DEBUG - Full Name: '$fullName' -> '$fullNameNormalized'");
+    error_log("DEBUG - Match: " . ($receiverNormalized === $fullNameNormalized ? 'YES' : 'NO'));
+    
+    if ($receiverNormalized !== $fullNameNormalized) {
         if (empty($relationship)) {
             $_SESSION['error'] = "Please specify the relationship to the student.";
             header("Location: request_form.php");
@@ -1063,20 +1072,36 @@ include '../includes/index_nav.php';
             })
         })()
 
-        // Show/hide relationship field based on receiver name
-        document.getElementById('nameOfReceiver').addEventListener('input', function() {
+        // Function to check and update relationship field visibility
+        function updateRelationshipField() {
             const studentFirst = document.getElementById('firstName').value.trim().toLowerCase();
             const studentLast = document.getElementById('lastName').value.trim().toLowerCase();
-            const receiver = this.value.trim().toLowerCase();
-            const fullName = (studentFirst + ' ' + studentLast).trim();
+            const receiver = document.getElementById('nameOfReceiver').value.trim().toLowerCase();
+            const fullName = (studentFirst + ' ' + studentLast).trim().toLowerCase();
             const relationshipRow = document.getElementById('relationshipRow');
+            
+            // Debug logging (remove in production)
+            console.log('Student First:', studentFirst);
+            console.log('Student Last:', studentLast);
+            console.log('Full Name:', fullName);
+            console.log('Receiver:', receiver);
+            console.log('Match:', receiver === fullName);
+            
+            // Check if receiver name matches student name (case-insensitive, trimmed)
             if (receiver && receiver !== fullName) {
                 relationshipRow.style.display = '';
             } else {
                 relationshipRow.style.display = 'none';
                 document.getElementById('relationship').value = '';
             }
-        });
+        }
+
+        // Show/hide relationship field based on receiver name
+        document.getElementById('nameOfReceiver').addEventListener('input', updateRelationshipField);
+        
+        // Also update when first name or last name changes
+        document.getElementById('firstName').addEventListener('input', updateRelationshipField);
+        document.getElementById('lastName').addEventListener('input', updateRelationshipField);
 
         // Holiday blocking for pick-up date
         const holidays = [
