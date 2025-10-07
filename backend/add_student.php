@@ -86,13 +86,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Insert into database (use $majorID now)
+    $currentTime = date('Y-m-d H:i:s');
     $stmt = $conn->prepare("INSERT INTO StudentInformation 
         (studentNo, firstname, lastname, middlename, birthDate, course_ID, majorID, 
          contactNo, studentStatus, yearLevel, added_By, dateCreated) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     
-    $stmt->bind_param("sssssiissss", $studentNo, $firstname, $lastname, $middlename, 
-        $birthDate, $course_ID, $majorID, $contactNo, $studentStatus, $year, $addedBy);
+    $stmt->bind_param("sssssiisssss", $studentNo, $firstname, $lastname, $middlename, 
+        $birthDate, $course_ID, $majorID, $contactNo, $studentStatus, $year, $addedBy, $currentTime);
 
     if ($stmt->execute()) {
         $_SESSION['message'] = "Student added successfully!";

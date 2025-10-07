@@ -392,7 +392,7 @@ function getStatusBadge($status) {
                             <div class="col-md-6">
                                 <div class="card detail-card mb-3">
                                     <div class="card-body">
-                                        <h5 class="card-title text-primary mb-4"><i class="bi bi-truck me-2"></i>Delivery Information</h5>
+                                        <h5 class="card-title text-primary mb-4"><i class="bi bi-truck me-2"></i>Receiver Information</h5>
                                         <div class="mb-3"><span class="detail-label">Receiver Name:</span><p class="mb-0"><?php echo htmlspecialchars($request['nameOfReceiver']); ?></p></div>
                                     </div>
                                 </div>
@@ -450,8 +450,7 @@ function getStatusBadge($status) {
                                 <i class="bi bi-arrow-left me-1"></i> Back to Requests
                             </a>
                             <div>
-                                <button class="btn btn-primary me-2"><i class="bi bi-printer me-1"></i> Print</button>
-                                <button class="btn btn-success"><i class="bi bi-download me-1"></i> Export</button>
+
                             </div>
                         </div>
                     </div>

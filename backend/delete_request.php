@@ -48,12 +48,13 @@ try {
                 throw new Exception("Request not found or already deleted.");
             } else {
                 // Soft delete the request
-                $deleteStmt = $conn->prepare("UPDATE RequestTable SET dateDeleted = NOW() WHERE requestID = ?");
+                $currentTime = date('Y-m-d H:i:s');
+                $deleteStmt = $conn->prepare("UPDATE RequestTable SET dateDeleted = ? WHERE requestID = ?");
                 if (!$deleteStmt) {
                     throw new Exception("Prepare failed: " . $conn->error);
                 }
                 
-                $deleteStmt->bind_param("i", $requestID);
+                $deleteStmt->bind_param("si", $currentTime, $requestID);
                 if ($deleteStmt->execute() && $deleteStmt->affected_rows > 0) {
                     $response['success'] = true;
                     $response['message'] = "Request deleted successfully!";

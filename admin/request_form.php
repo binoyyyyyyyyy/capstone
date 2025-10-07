@@ -211,21 +211,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Generate request code
         $requestCode = $requestCodePrefix . '-' . $documentID;
 
+        // Get current Philippine time
+        $currentTime = date('Y-m-d H:i:s');
+        
         // Insert into RequestTable with conditional userID handling
         if ($userID === NULL) {
             // If no admin is logged in, insert without userID
             $stmt = $conn->prepare("INSERT INTO RequestTable 
                 (requestCode, documentID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, dateCreated, relationship, email) 
-                VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), ?, ?)");
-            $stmt->bind_param("siissssss", $requestCode, $documentID, $studentID, 
-                $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $relationship, $email);
+                VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)");
+            $stmt->bind_param("siisssssss", $requestCode, $documentID, $studentID, 
+                $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $currentTime, $relationship, $email);
         } else {
             // If admin is logged in, include userID
             $stmt = $conn->prepare("INSERT INTO RequestTable 
                 (requestCode, documentID, userID, studentID, dateRequest, datePickUp, requestStatus, authorizationImage, nameOfReceiver, dateCreated, relationship, email) 
-                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, NOW(), ?, ?)");
-            $stmt->bind_param("siiissssss", $requestCode, $documentID, $userID, $studentID, 
-                $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $relationship, $email);
+                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)");
+            $stmt->bind_param("siiisssssss", $requestCode, $documentID, $userID, $studentID, 
+                $dateRequest, $datePickUp, $authorizationImage, $nameOfReceiver, $currentTime, $relationship, $email);
         }
         
         if ($stmt->execute()) {

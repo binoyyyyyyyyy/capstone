@@ -69,10 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_FILES['excelFile'])) {
     $checkStmt->close();
     
     // Insert student
+    $currentTime = date('Y-m-d H:i:s');
     $insertStmt = $conn->prepare("INSERT INTO StudentInformation 
         (studentNo, birthDate, firstname, lastname, middlename, course_ID, majorID, studentStatus, yearLevel, contactNo, added_By, dateCreated) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-    $insertStmt->bind_param("sssssiissss", $studentNo, $birthDate, $firstname, $lastname, $middlename, $course_ID, $majorID, $studentStatus, $yearLevel, $contactNo, $loggedInUser);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $insertStmt->bind_param("sssssiisssss", $studentNo, $birthDate, $firstname, $lastname, $middlename, $course_ID, $majorID, $studentStatus, $yearLevel, $contactNo, $loggedInUser, $currentTime);
     
     if ($insertStmt->execute()) {
         $_SESSION['message'] = "Student $firstname $lastname added successfully!";
@@ -177,10 +178,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excelFile'])) {
                 $majorStmt->close();
                 
                 // Insert student (added_By is set from logged-in user)
+                $currentTime = date('Y-m-d H:i:s');
                 $insertStmt = $conn->prepare("INSERT INTO StudentInformation 
                     (studentNo, birthDate, firstname, lastname, middlename, course_ID, majorID, studentStatus, yearLevel, contactNo, added_By, dateCreated) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-                $insertStmt->bind_param("sssssiissss", $studentNo, $birthDate, $firstname, $lastname, $middlename, $courseID, $majorID, $studentStatus, $yearLevel, $contactNo, $loggedInUser);
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $insertStmt->bind_param("sssssiisssss", $studentNo, $birthDate, $firstname, $lastname, $middlename, $courseID, $majorID, $studentStatus, $yearLevel, $contactNo, $loggedInUser, $currentTime);
                 
                 if ($insertStmt->execute()) {
                     $successCount++;

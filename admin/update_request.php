@@ -64,27 +64,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $editedBy = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
 
+    // Get current Philippine time
+    $currentTime = date('Y-m-d H:i:s');
+    
     if ($newStatus === 'completed') {
         $stmt = $conn->prepare("UPDATE RequestTable 
             SET requestStatus = ?, 
                 remarks = COALESCE(?, remarks),
                 datePickUp = ?,
-                dateRelease = NOW(),
-                dateUpdated = NOW(),
+                dateRelease = ?,
+                dateUpdated = ?,
                 edited_by = ?,
                 sverify = ?
             WHERE requestID = ?");
-        $stmt->bind_param("ssssii", $newStatus, $remarks, $datePickUp, $editedBy, $askForVerification, $requestID);
+        $stmt->bind_param("ssssssii", $newStatus, $remarks, $datePickUp, $currentTime, $currentTime, $editedBy, $askForVerification, $requestID);
     } else {
         $stmt = $conn->prepare("UPDATE RequestTable 
             SET requestStatus = ?, 
                 remarks = COALESCE(?, remarks),
                 datePickUp = ?,
-                dateUpdated = NOW(),
+                dateUpdated = ?,
                 edited_by = ?,
                 sverify = ?
             WHERE requestID = ?");
-        $stmt->bind_param("ssssii", $newStatus, $remarks, $datePickUp, $editedBy, $askForVerification, $requestID);
+        $stmt->bind_param("sssssii", $newStatus, $remarks, $datePickUp, $currentTime, $editedBy, $askForVerification, $requestID);
     }
     
 

@@ -40,11 +40,12 @@ try {
     if ($row = $result->fetch_assoc()) {
         if (password_verify($password, $row['password'])) {
             // Soft delete the document
-            $deleteStmt = $conn->prepare("UPDATE DocumentsType SET dateDeleted = NOW() WHERE documentID = ?");
+            $currentTime = date('Y-m-d H:i:s');
+            $deleteStmt = $conn->prepare("UPDATE DocumentsType SET dateDeleted = ? WHERE documentID = ?");
             if (!$deleteStmt) {
                 throw new Exception("Database error: " . $conn->error);
             }
-            $deleteStmt->bind_param("i", $documentID);
+            $deleteStmt->bind_param("si", $currentTime, $documentID);
             
             if ($deleteStmt->execute()) {
                 if ($deleteStmt->affected_rows > 0) {
